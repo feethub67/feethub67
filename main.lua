@@ -14,7 +14,7 @@ local camera = workspace.CurrentCamera
 -- ==========================================
 -- 🔑 CONFIGURATION DU MOT DE PASSE
 -- ==========================================
-local MOT_DE_PASSE = "67feetlove" -- <--- CHANGER LE MOT DE PASSE ICI
+local MOT_DE_PASSE = "PREMIUM123" -- <--- CHANGER LE MOT DE PASSE ICI
 
 
 -- ==========================================
@@ -796,7 +796,7 @@ local function LoadMainHub()
         states.selectedEgg = EggNameToIdMap[Value] or "Tentacle Egg"
     end)
 
-    local AutoEggToggle = Tabs.Eggs:AddToggle("AutoEggToggle", {Title = "Activer Auto Open Egg", Default = false })
+    local AutoEggToggle = Tabs.Eggs:AddToggle("AutoEggToggle", {Title = "Activer Auto Open Egg (x99)", Default = false })
     AutoEggToggle:OnChanged(function(state)
         states.autoEgg = state
         if states.autoEgg then
@@ -808,7 +808,8 @@ local function LoadMainHub()
                             local eggRemote = network and network:FindFirstChild("Eggs_RequestPurchase")
                             
                             if eggRemote then
-                                eggRemote:InvokeServer(states.selectedEgg, 1)
+                                -- Envoie 99 au lieu de 1 pour éclore le maximum possible
+                                eggRemote:InvokeServer(states.selectedEgg, 99)
                             end
                         end
                     end)
@@ -1303,14 +1304,19 @@ local function LoadMainHub()
     SaveManager:SetIgnoreIndexes({})
     ThemeManager:SetFolder("PremiumHub")
     SaveManager:SetFolder("PremiumHub/PetSim")
+    
+    -- Crée l'interface de sauvegarde dans l'onglet Paramètres
     SaveManager:BuildConfigSection(Tabs.Settings)
     ThemeManager:BuildInterfaceSection(Tabs.Settings)
 
     Window:SelectTab(1)
 
+    -- 🟢 LIGNE AJOUTÉE : Charge automatiquement tes réglages sauvegardés !
+    SaveManager:LoadAutoloadConfig()
+
     Fluent:Notify({
         Title = "💎 Premium Hub Chargé",
-        Content = "Interface améliorée activée !",
+        Content = "Interface et configurations chargées !",
         Duration = 5
     })
 end
