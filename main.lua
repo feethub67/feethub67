@@ -14,7 +14,7 @@ local camera = workspace.CurrentCamera
 -- ==========================================
 -- 🔑 CONFIGURATION DU MOT DE PASSE
 -- ==========================================
-local MOT_DE_PASSE = "PREMIUM123" -- <--- CHANGER LE MOT DE PASSE ICI
+local MOT_DE_PASSE = "67feetlove" -- <--- CHANGER LE MOT DE PASSE ICI
 
 
 -- ==========================================
