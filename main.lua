@@ -1,11 +1,13 @@
---// PREMIUM MULTI-HACK HUB POUR EXECUTOR (AVEC FLUENT UI)
---// Basé sur l'interface Fluent (Dawid Scripts) - UI Améliorée
+--// 67 FEET PREMIUM HUB (CUSTOM UI ENGINE - AMBERGLOW EDITION)
+--// 100% Indépendant - Zéro Loadstring - Thème Premium
+--// Jeu : Pet-Squads-Y
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local CoreGui = game:GetService("CoreGui")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local TweenService = game:GetService("TweenService")
 
 local player = Players.LocalPlayer
 local mouse = player:GetMouse()
@@ -18,37 +20,17 @@ local MOT_DE_PASSE = "67feetlove" -- <--- CHANGER LE MOT DE PASSE ICI
 
 
 -- ==========================================
--- FONCTION PRINCIPALE (CHARGE LE HUB)
+-- FONCTION PRINCIPALE (CHARGE LE HUB SUR-MESURE)
 -- ==========================================
 local function LoadMainHub()
     -- Variables d'état des hacks
     local states = {
-        fly = false,
-        noclip = false,
-        infJump = false,
-        esp = false,
-        clickTp = false,
-        speed = 16,
-        jump = 50,
-        autoTapAura = false,
-        auraRadius = 20,
-        autoCollect = false,
-        autoBuyZone = false,
-        autoMine = false,
-        digsiteMode = "All Mine",
-        autoEgg = false,
-        selectedEgg = "",
-        disableEggAnimation = false,
-        autoBuyEventUpgrades = false,
-        selectedEventUpgrades = {},
-        afkMode = false,
-        
-        autoConsumePotions = false,
-        selectedPotions = {},
-        autoPlaceFlags = false,
-        selectedFlag = "",
-        
-        autoQuests = false
+        fly = false, noclip = false, infJump = false, esp = false, clickTp = false,
+        speed = 16, jump = 50, autoTapAura = false, auraRadius = 20, autoCollect = false,
+        autoBuyZone = false, autoMine = false, digsiteMode = "All Mine", autoEgg = false,
+        selectedEgg = "", disableEggAnimation = false, autoBuyEventUpgrades = false,
+        selectedEventUpgrades = {}, afkMode = false, autoConsumePotions = false,
+        selectedPotions = {}, autoPlaceFlags = false, selectedFlag = "", autoQuests = false
     }
 
     -- ==========================================
@@ -62,10 +44,7 @@ local function LoadMainHub()
                 setreadonly(mt, false)
                 mt.__namecall = newcclosure(function(self, ...)
                     local method = getnamecallmethod()
-                    if method == "Kick" or method == "kick" then
-                        warn("🛡️ [Premium Hub Sécurité] Une tentative de Kick a été bloquée !")
-                        return nil
-                    end
+                    if method == "Kick" or method == "kick" then return nil end
                     return oldNamecall(self, ...)
                 end)
                 setreadonly(mt, true)
@@ -77,25 +56,13 @@ local function LoadMainHub()
     -- FONCTIONS D'INVENTAIRE (SCANNER GUIDS)
     -- ==========================================
     local getGC = getgc or get_gc_objects or function() return {} end
-
-    local function trim(s)
-        return s:match("^%s*(.-)%s*$")
-    end
-
-    local function isGUID(str)
-        if type(str) ~= "string" then return false end
-        return #str == 32 and str:match("^[0-9a-fA-F]+$") ~= nil
-    end
+    local function trim(s) return s:match("^%s*(.-)%s*$") end
 
     local function tryLoadFromSaveModule()
         local saveLibrary = ReplicatedStorage:FindFirstChild("Library") and ReplicatedStorage.Library:FindFirstChild("Client") and ReplicatedStorage.Library.Client:FindFirstChild("Save")
         if saveLibrary then
-            local success, save = pcall(function()
-                return require(saveLibrary).Get()
-            end)
-            if success and save and save.Inventory then
-                return save.Inventory
-            end
+            local success, save = pcall(function() return require(saveLibrary).Get() end)
+            if success and save and save.Inventory then return save.Inventory end
         end
         return nil
     end
@@ -104,23 +71,7 @@ local function LoadMainHub()
         local success, reg = pcall(getreg or debug.getregistry)
         if success and type(reg) == "table" then
             for _, v in pairs(reg) do
-                if type(v) == "table" and rawget(v, "Inventory") and type(v.Inventory) == "table" then
-                    return v.Inventory
-                end
-            end
-        end
-        
-        for _, obj in pairs(getGC(true)) do
-            if type(obj) == "table" and obj.Inventory and type(obj.Inventory) == "table" then
-                for _, categoryTable in pairs(obj.Inventory) do
-                    if type(categoryTable) == "table" then
-                        for key, _ in pairs(categoryTable) do
-                            if isGUID(key) then
-                                return obj.Inventory
-                            end
-                        end
-                    end
-                end
+                if type(v) == "table" and rawget(v, "Inventory") and type(v.Inventory) == "table" then return v.Inventory end
             end
         end
         return nil
@@ -128,44 +79,22 @@ local function LoadMainHub()
 
     local function getInventoryItems(searchName, targetCategory)
         local inventory = tryLoadFromSaveModule() or tryLoadFromMemoryScan()
-        if not inventory then 
-            return {} 
-        end
-
-        local cleanSearch = trim(searchName:lower())
-        local baseSearch = cleanSearch:gsub("%s*potion%s*", ""):gsub("%s*flag%s*", "")
-        baseSearch = trim(baseSearch)
-
+        if not inventory then return {} end
+        local cleanSearch = trim(searchName:lower()):gsub("%s*potion%s*", ""):gsub("%s*flag%s*", "")
+        cleanSearch = trim(cleanSearch)
         local matches = {}
-
         for catName, catTable in pairs(inventory) do
             local categoryMatch = true
             if targetCategory then
-                local tc = targetCategory:lower()
-                local cn = catName:lower()
+                local tc, cn = targetCategory:lower(), catName:lower()
                 categoryMatch = (cn == tc or cn == (tc .. "s") or cn:find(tc) or tc:find(cn))
             end
-
             if categoryMatch and type(catTable) == "table" then
                 for guid, data in pairs(catTable) do
                     local name = data.id or data.Name or ""
                     local cleanItemName = trim(name:lower())
-
-                    local isMatch = false
-                    if cleanItemName == cleanSearch then
-                        isMatch = true
-                    elseif cleanItemName:find(baseSearch, 1, true) then
-                        isMatch = true
-                    end
-
-                    if isMatch then
-                        table.insert(matches, {
-                            guid = guid,
-                            amount = data._am or data.Amount or 1,
-                            category = catName,
-                            realName = name,
-                            tier = data._tn or data.Tier or 1
-                        })
+                    if cleanItemName == cleanSearch or cleanItemName:find(cleanSearch, 1, true) then
+                        table.insert(matches, {guid = guid, realName = name, tier = data._tn or data.Tier or 1})
                     end
                 end
             end
@@ -174,79 +103,610 @@ local function LoadMainHub()
     end
 
     -- ==========================================
-    -- 1. CHARGEMENT DE FLUENT UI & ADDONS
+    -- 1. MOTEUR UI RAYFIELD-LIKE AMÉLIORÉ (AMBERGLOW)
     -- ==========================================
-    local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
-    local SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua"))()
-    local ThemeManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/ThemeManager.lua"))()
+    if CoreGui:FindFirstChild("67FeetCustomHub") then CoreGui["67FeetCustomHub"]:Destroy() end
 
-    local Window = Fluent:CreateWindow({
-        Title = "💎 Premium Hub",
-        SubTitle = "v2.8 - Edition Auto Quests Parallèles",
-        TabWidth = 160,
-        Size = UDim2.fromOffset(600, 460),
-        Acrylic = true,
-        Theme = "Amethyst", 
-        MinimizeKey = Enum.KeyCode.RightControl
-    })
+    local CustomUI = Instance.new("ScreenGui")
+    CustomUI.Name = "67FeetCustomHub"
+    CustomUI.Parent = CoreGui
+    CustomUI.ResetOnSpawn = false
+    CustomUI.ZIndexBehavior = Enum.ZIndexBehavior.Sibling -- CORRECTION DU BUG D'AFFICHAGE
 
-    -- ==========================================
-    -- 2. CRÉATION DES ONGLETS (TABS)
-    -- ==========================================
-    local Tabs = {
-        Main = Window:AddTab({ Title = "Mouvements", Icon = "move" }),
-        Visuals = Window:AddTab({ Title = "Visuels & ESP", Icon = "eye" }),
-        Farm = Window:AddTab({ Title = "Farming", Icon = "pickaxe" }),
-        Eggs = Window:AddTab({ Title = "Oeufs", Icon = "egg" }),
-        Event = Window:AddTab({ Title = "Événements", Icon = "star" }),
-        Consumables = Window:AddTab({ Title = "Boosts", Icon = "flask-conical" }),
-        Quests = Window:AddTab({ Title = "Autopilot", Icon = "bot" }),
-        Settings = Window:AddTab({ Title = "Paramètres", Icon = "settings" })
+    -- Couleurs Thème Rayfield AmberGlow
+    local Colors = {
+        MainBg = Color3.fromRGB(25, 25, 25),
+        SideBg = Color3.fromRGB(18, 18, 18),
+        TopBg = Color3.fromRGB(20, 20, 20),
+        Accent = Color3.fromRGB(255, 175, 50), -- Gold/Amber
+        ElementBg = Color3.fromRGB(35, 35, 35),
+        ElementHover = Color3.fromRGB(45, 45, 45),
+        Text = Color3.fromRGB(240, 240, 240),
+        SubText = Color3.fromRGB(150, 150, 160)
     }
 
-    Window:SelectTab(1)
+    local HubMain = Instance.new("Frame")
+    HubMain.Size = UDim2.new(0, 680, 0, 450)
+    HubMain.Position = UDim2.new(0.5, -340, 0.5, -225)
+    HubMain.BackgroundColor3 = Colors.MainBg
+    HubMain.BorderSizePixel = 0
+    HubMain.ClipsDescendants = true
+    HubMain.Parent = CustomUI
+    Instance.new("UICorner", HubMain).CornerRadius = UDim.new(0, 10)
+    
+    local HubStroke = Instance.new("UIStroke", HubMain)
+    HubStroke.Color = Color3.fromRGB(40, 40, 40)
+    HubStroke.Thickness = 1
 
-    -- ==========================================
-    -- 3. LOGIQUE DES HACKS (MOUVEMENTS)
-    -- ==========================================
-    local SectionStats = Tabs.Main:AddSection("Statistiques du Joueur")
-
-    local SpeedSlider = Tabs.Main:AddSlider("SpeedSlider", {
-        Title = "Vitesse de déplacement",
-        Description = "Modifie le WalkSpeed",
-        Default = 16, Min = 16, Max = 200, Rounding = 1,
-        Callback = function(Value)
-            local hum = player.Character and player.Character:FindFirstChild("Humanoid")
-            if hum then hum.WalkSpeed = Value end
+    -- Drag Logic
+    local dragging, dragInput, dragStart, startPos
+    HubMain.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = HubMain.Position
+            input.Changed:Connect(function() if input.UserInputState == Enum.UserInputState.End then dragging = false end end)
         end
-    })
+    end)
+    HubMain.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then dragInput = input end
+    end)
+    UserInputService.InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            local delta = input.Position - dragStart
+            HubMain.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
 
-    local JumpSlider = Tabs.Main:AddSlider("JumpSlider", {
-        Title = "Puissance de saut",
-        Description = "Modifie le JumpPower",
-        Default = 50, Min = 50, Max = 300, Rounding = 1,
-        Callback = function(Value)
-            local hum = player.Character and player.Character:FindFirstChild("Humanoid")
-            if hum then 
-                hum.UseJumpPower = true
-                hum.JumpPower = Value 
+    -- HEADER TOP
+    local TopBar = Instance.new("Frame", HubMain)
+    TopBar.Size = UDim2.new(1, 0, 0, 45)
+    TopBar.BackgroundColor3 = Colors.TopBg
+    TopBar.BorderSizePixel = 0
+    TopBar.ZIndex = 20
+    local TopBarCorner = Instance.new("UICorner", TopBar)
+    TopBarCorner.CornerRadius = UDim.new(0, 10)
+    local TopBarFix = Instance.new("Frame", TopBar) 
+    TopBarFix.Size = UDim2.new(1, 0, 0, 10)
+    TopBarFix.Position = UDim2.new(0, 0, 1, -10)
+    TopBarFix.BackgroundColor3 = Colors.TopBg
+    TopBarFix.BorderSizePixel = 0
+
+    local HeaderLogo = Instance.new("ImageLabel", TopBar)
+    HeaderLogo.Size = UDim2.new(0, 28, 0, 28)
+    HeaderLogo.Position = UDim2.new(0, 15, 0.5, -14)
+    HeaderLogo.BackgroundTransparency = 1
+    HeaderLogo.ScaleType = Enum.ScaleType.Fit
+    HeaderLogo.Image = "rbxthumb://type=Asset&id=74238841967167&w=150&h=150"
+
+    local HeaderTitle = Instance.new("TextLabel", TopBar)
+    HeaderTitle.Size = UDim2.new(1, -60, 1, 0)
+    HeaderTitle.Position = UDim2.new(0, 55, 0, 0)
+    HeaderTitle.BackgroundTransparency = 1
+    HeaderTitle.Text = "67 Feet Premium ⭐️ | Pet-Squads-Y"
+    HeaderTitle.TextColor3 = Colors.Accent
+    HeaderTitle.Font = Enum.Font.GothamBold
+    HeaderTitle.TextSize = 14
+    HeaderTitle.TextXAlignment = Enum.TextXAlignment.Left
+
+    local Divider = Instance.new("Frame", TopBar)
+    Divider.Size = UDim2.new(1, 0, 0, 1)
+    Divider.Position = UDim2.new(0, 0, 1, 0)
+    Divider.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    Divider.BorderSizePixel = 0
+
+    -- SIDEBAR
+    local Sidebar = Instance.new("Frame", HubMain)
+    Sidebar.Size = UDim2.new(0, 170, 1, -45)
+    Sidebar.Position = UDim2.new(0, 0, 0, 45)
+    Sidebar.BackgroundColor3 = Colors.SideBg
+    Sidebar.BorderSizePixel = 0
+    
+    local SidebarDivider = Instance.new("Frame", Sidebar)
+    SidebarDivider.Size = UDim2.new(0, 1, 1, 0)
+    SidebarDivider.Position = UDim2.new(1, 0, 0, 0)
+    SidebarDivider.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    SidebarDivider.BorderSizePixel = 0
+
+    local TabContainer = Instance.new("ScrollingFrame", Sidebar)
+    TabContainer.Size = UDim2.new(1, 0, 1, -60)
+    TabContainer.Position = UDim2.new(0, 0, 0, 0)
+    TabContainer.BackgroundTransparency = 1
+    TabContainer.ScrollBarThickness = 0
+    
+    local TabPadding = Instance.new("UIPadding", TabContainer)
+    TabPadding.PaddingLeft = UDim.new(0, 10)
+    TabPadding.PaddingRight = UDim.new(0, 10)
+    TabPadding.PaddingTop = UDim.new(0, 10)
+    
+    local TabListLayout = Instance.new("UIListLayout", TabContainer)
+    TabListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    TabListLayout.Padding = UDim.new(0, 4)
+
+    TabListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        TabContainer.CanvasSize = UDim2.new(0, 0, 0, TabListLayout.AbsoluteContentSize.Y + 20)
+    end)
+
+    -- USER INFO (BOTTOM SIDEBAR)
+    local UserInfo = Instance.new("Frame", Sidebar)
+    UserInfo.Size = UDim2.new(1, 0, 0, 50)
+    UserInfo.Position = UDim2.new(0, 0, 1, -50)
+    UserInfo.BackgroundColor3 = Colors.SideBg
+    UserInfo.BorderSizePixel = 0
+
+    local UserAvatar = Instance.new("ImageLabel", UserInfo)
+    UserAvatar.Size = UDim2.new(0, 30, 0, 30)
+    UserAvatar.Position = UDim2.new(0, 15, 0.5, -15)
+    UserAvatar.BackgroundTransparency = 1
+    UserAvatar.Image = "https://www.roblox.com/headshot-thumbnail/image?userId=" .. player.UserId .. "&width=150&height=150&format=png"
+    Instance.new("UICorner", UserAvatar).CornerRadius = UDim.new(1, 0)
+
+    local UserName = Instance.new("TextLabel", UserInfo)
+    UserName.Size = UDim2.new(1, -60, 1, 0)
+    UserName.Position = UDim2.new(0, 55, 0, 0)
+    UserName.BackgroundTransparency = 1
+    UserName.Text = player.Name
+    UserName.TextColor3 = Colors.Text
+    UserName.Font = Enum.Font.GothamMedium
+    UserName.TextSize = 12
+    UserName.TextXAlignment = Enum.TextXAlignment.Left
+
+    -- CONTENT AREA
+    local ContentArea = Instance.new("Frame", HubMain)
+    ContentArea.Size = UDim2.new(1, -170, 1, -45)
+    ContentArea.Position = UDim2.new(0, 170, 0, 45)
+    ContentArea.BackgroundTransparency = 1
+    ContentArea.ZIndex = 10
+
+    local tabs = {}
+    local Lib = {}
+    local tabLayoutCounter = 0
+    
+    function Lib:CreateTab(name, iconText)
+        tabLayoutCounter = tabLayoutCounter + 1
+        local tabBtn = Instance.new("TextButton", TabContainer)
+        tabBtn.LayoutOrder = tabLayoutCounter
+        tabBtn.Size = UDim2.new(1, 0, 0, 36) -- Taille auto-gérée par le Padding
+        tabBtn.BackgroundColor3 = Colors.SideBg
+        tabBtn.Text = "   " .. (iconText or "") .. "  " .. name
+        tabBtn.TextColor3 = Colors.SubText
+        tabBtn.Font = Enum.Font.GothamMedium
+        tabBtn.TextSize = 13
+        tabBtn.TextXAlignment = Enum.TextXAlignment.Left
+        Instance.new("UICorner", tabBtn).CornerRadius = UDim.new(0, 6)
+
+        local tabLine = Instance.new("Frame", tabBtn)
+        tabLine.Size = UDim2.new(0, 3, 0, 0)
+        tabLine.Position = UDim2.new(0, 6, 0.5, 0)
+        tabLine.AnchorPoint = Vector2.new(0, 0.5)
+        tabLine.BackgroundColor3 = Colors.Accent
+        tabLine.BorderSizePixel = 0
+        Instance.new("UICorner", tabLine).CornerRadius = UDim.new(1, 0)
+
+        local tabContent = Instance.new("ScrollingFrame", ContentArea)
+        tabContent.Size = UDim2.new(1, -20, 1, -20)
+        tabContent.Position = UDim2.new(0, 10, 0, 10)
+        tabContent.BackgroundTransparency = 1
+        tabContent.ScrollBarThickness = 4
+        tabContent.ScrollBarImageColor3 = Colors.Accent
+        tabContent.Visible = false
+        
+        local contentLayout = Instance.new("UIListLayout", tabContent)
+        contentLayout.SortOrder = Enum.SortOrder.LayoutOrder
+        contentLayout.Padding = UDim.new(0, 10)
+
+        local function updateCanvas()
+            tabContent.CanvasSize = UDim2.new(0, 0, 0, contentLayout.AbsoluteContentSize.Y + 20)
+        end
+        tabContent.ChildAdded:Connect(function() task.wait(); updateCanvas() end)
+        contentLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateCanvas)
+
+        tabBtn.MouseButton1Click:Connect(function()
+            for _, t in pairs(tabs) do
+                t.content.Visible = false
+                TweenService:Create(t.btn, TweenInfo.new(0.2), {BackgroundColor3 = Colors.SideBg, TextColor3 = Colors.SubText}):Play()
+                TweenService:Create(t.line, TweenInfo.new(0.2), {Size = UDim2.new(0, 3, 0, 0)}):Play()
             end
+            tabContent.Visible = true
+            TweenService:Create(tabBtn, TweenInfo.new(0.2), {BackgroundColor3 = Colors.ElementBg, TextColor3 = Colors.Accent}):Play()
+            TweenService:Create(tabLine, TweenInfo.new(0.2), {Size = UDim2.new(0, 3, 0.5, 0)}):Play()
+        end)
+
+        table.insert(tabs, {btn = tabBtn, content = tabContent, line = tabLine})
+        if #tabs == 1 then
+            tabContent.Visible = true
+            tabBtn.BackgroundColor3 = Colors.ElementBg
+            tabBtn.TextColor3 = Colors.Accent
+            tabLine.Size = UDim2.new(0, 3, 0.5, 0)
         end
-    })
 
-    local SectionHacks = Tabs.Main:AddSection("Exploits & Triche")
+        local TabAPI = {}
+        local itemLayoutCounter = 0
 
-    -- FLY
+        function TabAPI:CreateLabel(text)
+            itemLayoutCounter = itemLayoutCounter + 1
+            local lbl = Instance.new("TextLabel", tabContent)
+            lbl.LayoutOrder = itemLayoutCounter
+            lbl.Size = UDim2.new(1, -10, 0, 25)
+            lbl.BackgroundTransparency = 1
+            lbl.Text = text
+            lbl.TextColor3 = Colors.Text
+            lbl.Font = Enum.Font.GothamBold
+            lbl.TextSize = 14
+            lbl.TextXAlignment = Enum.TextXAlignment.Left
+        end
+
+        function TabAPI:CreateParagraph(config)
+            itemLayoutCounter = itemLayoutCounter + 1
+            local frame = Instance.new("Frame", tabContent)
+            frame.LayoutOrder = itemLayoutCounter
+            frame.BackgroundColor3 = Colors.ElementBg
+            Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 6)
+            local stroke = Instance.new("UIStroke", frame)
+            stroke.Color = Color3.fromRGB(50, 50, 50)
+            
+            local pTitle = Instance.new("TextLabel", frame)
+            pTitle.Size = UDim2.new(1, -20, 0, 25)
+            pTitle.Position = UDim2.new(0, 10, 0, 5)
+            pTitle.BackgroundTransparency = 1
+            pTitle.Text = config.Title
+            pTitle.TextColor3 = Colors.Accent
+            pTitle.Font = Enum.Font.GothamBold
+            pTitle.TextSize = 13
+            pTitle.TextXAlignment = Enum.TextXAlignment.Left
+
+            local pContent = Instance.new("TextLabel", frame)
+            pContent.Size = UDim2.new(1, -20, 0, 20)
+            pContent.Position = UDim2.new(0, 10, 0, 30)
+            pContent.BackgroundTransparency = 1
+            pContent.Text = config.Content
+            pContent.TextColor3 = Colors.SubText
+            pContent.Font = Enum.Font.Gotham
+            pContent.TextSize = 12
+            pContent.TextXAlignment = Enum.TextXAlignment.Left
+            pContent.TextYAlignment = Enum.TextYAlignment.Top
+            pContent.TextWrapped = true
+
+            local function adaptSize()
+                local txtHeight = pContent.TextBounds.Y
+                pContent.Size = UDim2.new(1, -20, 0, txtHeight)
+                frame.Size = UDim2.new(1, -10, 0, 35 + txtHeight + 10)
+            end
+            pContent:GetPropertyChangedSignal("TextBounds"):Connect(adaptSize)
+            task.delay(0.05, adaptSize) -- Double sécurité pour le calcul du texte
+
+            return {
+                Set = function(self, newConfig)
+                    if newConfig.Title then pTitle.Text = newConfig.Title end
+                    if newConfig.Content then pContent.Text = newConfig.Content end
+                end
+            }
+        end
+
+        function TabAPI:CreateToggle(name, default, callback)
+            itemLayoutCounter = itemLayoutCounter + 1
+            local frame = Instance.new("Frame", tabContent)
+            frame.LayoutOrder = itemLayoutCounter
+            frame.Size = UDim2.new(1, -10, 0, 45)
+            frame.BackgroundColor3 = Colors.ElementBg
+            Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 6)
+            local stroke = Instance.new("UIStroke", frame)
+            stroke.Color = Color3.fromRGB(50, 50, 50)
+            
+            local lbl = Instance.new("TextLabel", frame)
+            lbl.Size = UDim2.new(0.7, 0, 1, 0)
+            lbl.Position = UDim2.new(0, 15, 0, 0)
+            lbl.BackgroundTransparency = 1
+            lbl.Text = name
+            lbl.TextColor3 = Colors.Text
+            lbl.Font = Enum.Font.GothamMedium
+            lbl.TextSize = 13
+            lbl.TextXAlignment = Enum.TextXAlignment.Left
+
+            local toggleBg = Instance.new("Frame", frame)
+            toggleBg.Size = UDim2.new(0, 44, 0, 22)
+            toggleBg.Position = UDim2.new(1, -60, 0.5, -11)
+            toggleBg.BackgroundColor3 = default and Colors.Accent or Color3.fromRGB(60, 60, 65)
+            Instance.new("UICorner", toggleBg).CornerRadius = UDim.new(1, 0)
+
+            local circle = Instance.new("Frame", toggleBg)
+            circle.Size = UDim2.new(0, 18, 0, 18)
+            circle.Position = default and UDim2.new(1, -20, 0.5, -9) or UDim2.new(0, 2, 0.5, -9)
+            circle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            Instance.new("UICorner", circle).CornerRadius = UDim.new(1, 0)
+
+            local toggleBtn = Instance.new("TextButton", frame)
+            toggleBtn.Size = UDim2.new(1, 0, 1, 0)
+            toggleBtn.BackgroundTransparency = 1
+            toggleBtn.Text = ""
+
+            local toggled = default
+            toggleBtn.MouseButton1Click:Connect(function()
+                toggled = not toggled
+                local goalColor = toggled and Colors.Accent or Color3.fromRGB(60, 60, 65)
+                local goalPos = toggled and UDim2.new(1, -20, 0.5, -9) or UDim2.new(0, 2, 0.5, -9)
+                TweenService:Create(toggleBg, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundColor3 = goalColor}):Play()
+                TweenService:Create(circle, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = goalPos}):Play()
+                if callback then callback(toggled) end
+            end)
+            if callback then task.spawn(callback, toggled) end
+            
+            return {
+                Set = function(self, val)
+                    toggled = val
+                    local goalColor = toggled and Colors.Accent or Color3.fromRGB(60, 60, 65)
+                    local goalPos = toggled and UDim2.new(1, -20, 0.5, -9) or UDim2.new(0, 2, 0.5, -9)
+                    TweenService:Create(toggleBg, TweenInfo.new(0.25), {BackgroundColor3 = goalColor}):Play()
+                    TweenService:Create(circle, TweenInfo.new(0.25), {Position = goalPos}):Play()
+                    if callback then task.spawn(callback, toggled) end
+                end
+            }
+        end
+
+        function TabAPI:CreateSlider(name, min, max, default, callback)
+            itemLayoutCounter = itemLayoutCounter + 1
+            local frame = Instance.new("Frame", tabContent)
+            frame.LayoutOrder = itemLayoutCounter
+            frame.Size = UDim2.new(1, -10, 0, 65)
+            frame.BackgroundColor3 = Colors.ElementBg
+            Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 6)
+            local stroke = Instance.new("UIStroke", frame)
+            stroke.Color = Color3.fromRGB(50, 50, 50)
+            
+            local lbl = Instance.new("TextLabel", frame)
+            lbl.Size = UDim2.new(0.7, 0, 0, 20)
+            lbl.Position = UDim2.new(0, 15, 0, 10)
+            lbl.BackgroundTransparency = 1
+            lbl.Text = name
+            lbl.TextColor3 = Colors.Text
+            lbl.Font = Enum.Font.GothamMedium
+            lbl.TextSize = 13
+            lbl.TextXAlignment = Enum.TextXAlignment.Left
+
+            local valLbl = Instance.new("TextLabel", frame)
+            valLbl.Size = UDim2.new(0.3, 0, 0, 20)
+            valLbl.Position = UDim2.new(0.7, -15, 0, 10)
+            valLbl.BackgroundTransparency = 1
+            valLbl.Text = tostring(default)
+            valLbl.TextColor3 = Colors.Accent
+            valLbl.Font = Enum.Font.GothamBold
+            valLbl.TextSize = 13
+            valLbl.TextXAlignment = Enum.TextXAlignment.Right
+
+            local barBg = Instance.new("TextButton", frame)
+            barBg.Size = UDim2.new(1, -30, 0, 6)
+            barBg.Position = UDim2.new(0, 15, 0, 40)
+            barBg.BackgroundColor3 = Color3.fromRGB(60, 60, 65)
+            barBg.Text = ""
+            Instance.new("UICorner", barBg).CornerRadius = UDim.new(1, 0)
+
+            local barFill = Instance.new("Frame", barBg)
+            local pct = (default - min) / (max - min)
+            barFill.Size = UDim2.new(pct, 0, 1, 0)
+            barFill.BackgroundColor3 = Colors.Accent
+            Instance.new("UICorner", barFill).CornerRadius = UDim.new(1, 0)
+            
+            local thumb = Instance.new("Frame", barFill)
+            thumb.Size = UDim2.new(0, 14, 0, 14)
+            thumb.Position = UDim2.new(1, -7, 0.5, -7)
+            thumb.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            Instance.new("UICorner", thumb).CornerRadius = UDim.new(1, 0)
+
+            local sliding = false
+            local function updateSlider(input)
+                local pos = math.clamp((input.Position.X - barBg.AbsolutePosition.X) / barBg.AbsoluteSize.X, 0, 1)
+                barFill.Size = UDim2.new(pos, 0, 1, 0)
+                local val = math.floor(min + (max - min) * pos)
+                valLbl.Text = tostring(val)
+                if callback then callback(val) end
+            end
+
+            barBg.InputBegan:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                    sliding = true
+                    updateSlider(input)
+                end
+            end)
+            UserInputService.InputEnded:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then sliding = false end
+            end)
+            UserInputService.InputChanged:Connect(function(input)
+                if sliding and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+                    updateSlider(input)
+                end
+            end)
+        end
+
+        -- LE FAMEUX DROPDOWN RÉPARÉ ET INFAILLIBLE
+        function TabAPI:CreateDropdown(name, options, isMulti, callback)
+            itemLayoutCounter = itemLayoutCounter + 1
+            local frame = Instance.new("Frame", tabContent)
+            frame.LayoutOrder = itemLayoutCounter
+            frame.BackgroundColor3 = Colors.ElementBg
+            frame.ClipsDescendants = true
+            Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 6)
+            local stroke = Instance.new("UIStroke", frame)
+            stroke.Color = Color3.fromRGB(50, 50, 50)
+            
+            local headerBtn = Instance.new("TextButton", frame)
+            headerBtn.Size = UDim2.new(1, 0, 0, 45)
+            headerBtn.BackgroundTransparency = 1
+            headerBtn.Text = ""
+
+            local lbl = Instance.new("TextLabel", headerBtn)
+            lbl.Size = UDim2.new(0.5, 0, 1, 0)
+            lbl.Position = UDim2.new(0, 15, 0, 0)
+            lbl.BackgroundTransparency = 1
+            lbl.Text = name
+            lbl.TextColor3 = Colors.Text
+            lbl.Font = Enum.Font.GothamMedium
+            lbl.TextSize = 13
+            lbl.TextXAlignment = Enum.TextXAlignment.Left
+
+            local valLbl = Instance.new("TextLabel", headerBtn)
+            valLbl.Size = UDim2.new(0.4, 0, 1, 0)
+            valLbl.Position = UDim2.new(0.6, -45, 0, 0)
+            valLbl.BackgroundTransparency = 1
+            valLbl.Text = options[1] or "Sélectionner..."
+            valLbl.TextColor3 = Colors.SubText
+            valLbl.Font = Enum.Font.Gotham
+            valLbl.TextSize = 12
+            valLbl.TextXAlignment = Enum.TextXAlignment.Right
+            valLbl.TextTruncate = Enum.TextTruncate.AtEnd
+            
+            local arrow = Instance.new("TextLabel", headerBtn)
+            arrow.Size = UDim2.new(0, 20, 0, 20)
+            arrow.Position = UDim2.new(1, -30, 0.5, -10)
+            arrow.BackgroundTransparency = 1
+            arrow.Text = "▼"
+            arrow.TextColor3 = Colors.SubText
+            arrow.Font = Enum.Font.GothamBold
+            arrow.TextSize = 12
+
+            local listFrame = Instance.new("ScrollingFrame", frame)
+            listFrame.Size = UDim2.new(1, 0, 1, -45)
+            listFrame.Position = UDim2.new(0, 0, 0, 45)
+            listFrame.BackgroundTransparency = 1
+            listFrame.ScrollBarThickness = 3
+            listFrame.ScrollBarImageColor3 = Colors.Accent
+            listFrame.BorderSizePixel = 0
+            
+            local listLayout = Instance.new("UIListLayout", listFrame)
+            listLayout.SortOrder = Enum.SortOrder.LayoutOrder
+            
+            local isOpen = false
+            local selectedMulti = {}
+            local currentOpts = options
+            
+            local function updateSize()
+                if isOpen then
+                    local contentHeight = #currentOpts * 30
+                    local targetHeight = math.min(contentHeight, 150) + 50
+                    listFrame.CanvasSize = UDim2.new(0, 0, 0, contentHeight)
+                    TweenService:Create(frame, TweenInfo.new(0.2), {Size = UDim2.new(1, -10, 0, targetHeight)}):Play()
+                    TweenService:Create(arrow, TweenInfo.new(0.2), {Rotation = 180}):Play()
+                else
+                    TweenService:Create(frame, TweenInfo.new(0.2), {Size = UDim2.new(1, -10, 0, 45)}):Play()
+                    TweenService:Create(arrow, TweenInfo.new(0.2), {Rotation = 0}):Play()
+                end
+            end
+
+            headerBtn.MouseButton1Click:Connect(function()
+                isOpen = not isOpen
+                updateSize()
+            end)
+
+            local function buildOptions(opts)
+                currentOpts = opts
+                for _, child in pairs(listFrame:GetChildren()) do
+                    if child:IsA("TextButton") then child:Destroy() end
+                end
+                for i, opt in ipairs(opts) do
+                    local optBtn = Instance.new("TextButton", listFrame)
+                    optBtn.Size = UDim2.new(1, -20, 0, 30)
+                    optBtn.Position = UDim2.new(0, 10, 0, 0)
+                    optBtn.BackgroundColor3 = Colors.ElementBg
+                    optBtn.Text = "  " .. opt
+                    optBtn.TextColor3 = Colors.SubText
+                    optBtn.Font = Enum.Font.Gotham
+                    optBtn.TextSize = 12
+                    optBtn.TextXAlignment = Enum.TextXAlignment.Left
+                    Instance.new("UICorner", optBtn).CornerRadius = UDim.new(0, 4)
+
+                    optBtn.MouseEnter:Connect(function() TweenService:Create(optBtn, TweenInfo.new(0.2), {BackgroundColor3 = Colors.ElementHover}):Play() end)
+                    optBtn.MouseLeave:Connect(function() TweenService:Create(optBtn, TweenInfo.new(0.2), {BackgroundColor3 = Colors.ElementBg}):Play() end)
+
+                    optBtn.MouseButton1Click:Connect(function()
+                        if not isMulti then
+                            valLbl.Text = opt
+                            isOpen = false
+                            updateSize()
+                            if callback then callback({opt}) end
+                        else
+                            if selectedMulti[opt] then
+                                selectedMulti[opt] = nil
+                                optBtn.TextColor3 = Colors.SubText
+                            else
+                                selectedMulti[opt] = true
+                                optBtn.TextColor3 = Colors.Accent
+                            end
+                            local res = {}
+                            for k, v in pairs(selectedMulti) do if v then table.insert(res, k) end end
+                            valLbl.Text = #res > 0 and (#res .. " sélectionnés") or "Aucun"
+                            if callback then callback(res) end
+                        end
+                    end)
+                end
+                if isOpen then updateSize() end
+            end
+
+            buildOptions(options)
+            updateSize()
+            
+            -- Lancement initial
+            if not isMulti and #options > 0 then
+                if callback then task.spawn(function() callback({options[1]}) end) end
+            end
+
+            return {
+                Refresh = function(newOpts)
+                    buildOptions(newOpts)
+                    if not isMulti and #newOpts > 0 and not table.find(newOpts, valLbl.Text) then
+                        valLbl.Text = newOpts[1]
+                        if callback then task.spawn(function() callback({newOpts[1]}) end) end
+                    end
+                end
+            }
+        end
+
+        function TabAPI:CreateButton(name, callback)
+            itemLayoutCounter = itemLayoutCounter + 1
+            local btn = Instance.new("TextButton", tabContent)
+            btn.LayoutOrder = itemLayoutCounter
+            btn.Size = UDim2.new(1, -10, 0, 40)
+            btn.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
+            btn.Text = name
+            btn.TextColor3 = Colors.Accent
+            btn.Font = Enum.Font.GothamBold
+            btn.TextSize = 13
+            Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+            local strk = Instance.new("UIStroke", btn)
+            strk.Color = Colors.Accent
+            strk.Thickness = 1
+
+            btn.MouseEnter:Connect(function() TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(55, 55, 60)}):Play() end)
+            btn.MouseLeave:Connect(function() TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(45, 45, 50)}):Play() end)
+            btn.MouseButton1Click:Connect(function() if callback then callback() end end)
+        end
+
+        return TabAPI
+    end
+
+    -- ==========================================
+    -- 2. CRÉATION DES ONGLETS ET INJECTION DES HACKS
+    -- ==========================================
+    
+    -- === TAB MOUVEMENTS ===
+    local TabMain = Lib:CreateTab("Mouvements", "🏃")
+    TabMain:CreateLabel("Statistiques du Joueur")
+    TabMain:CreateSlider("Vitesse de déplacement", 16, 200, 16, function(val)
+        local hum = player.Character and player.Character:FindFirstChild("Humanoid")
+        if hum then hum.WalkSpeed = val end
+    end)
+    TabMain:CreateSlider("Puissance de saut", 50, 300, 50, function(val)
+        local hum = player.Character and player.Character:FindFirstChild("Humanoid")
+        if hum then hum.UseJumpPower = true; hum.JumpPower = val end
+    end)
+    
+    TabMain:CreateLabel("Exploits")
     local flyBodyVel, flyBodyGyro
     local flyKeys = {w = false, a = false, s = false, d = false, space = false, lshift = false}
-    local FlyToggle = Tabs.Main:AddToggle("FlyToggle", {Title = "Voler (Fly)", Default = false })
-    FlyToggle:OnChanged(function(state)
-        states.fly = state
+    TabMain:CreateToggle("Voler (Fly)", false, function(val)
+        states.fly = val
         local char = player.Character
         if not char or not char:FindFirstChild("HumanoidRootPart") then return end
         local root = char.HumanoidRootPart
         local hum = char:FindFirstChild("Humanoid")
-        
         if states.fly then
             hum.PlatformStand = true
             flyBodyVel = Instance.new("BodyVelocity", root)
@@ -255,7 +715,6 @@ local function LoadMainHub()
             flyBodyGyro = Instance.new("BodyGyro", root)
             flyBodyGyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
             flyBodyGyro.P = 10000
-            
             task.spawn(function()
                 while states.fly and char.Parent do
                     local move = Vector3.new()
@@ -265,12 +724,7 @@ local function LoadMainHub()
                     if flyKeys.d then move = move + camera.CFrame.RightVector end
                     if flyKeys.space then move = move + Vector3.new(0, 1, 0) end
                     if flyKeys.lshift then move = move - Vector3.new(0, 1, 0) end
-                    
-                    if move.Magnitude > 0 then
-                        flyBodyVel.Velocity = move.Unit * 60
-                    else
-                        flyBodyVel.Velocity = Vector3.zero
-                    end
+                    flyBodyVel.Velocity = move.Magnitude > 0 and move.Unit * 60 or Vector3.zero
                     flyBodyGyro.CFrame = camera.CFrame
                     RunService.Heartbeat:Wait()
                 end
@@ -300,18 +754,14 @@ local function LoadMainHub()
         elseif i.KeyCode == Enum.KeyCode.LeftShift then flyKeys.lshift = false end
     end)
 
-    -- NOCLIP
     local noclipConnection
-    local NoclipToggle = Tabs.Main:AddToggle("NoclipToggle", {Title = "Traverser les murs (Noclip)", Default = false })
-    NoclipToggle:OnChanged(function(state)
-        states.noclip = state
+    TabMain:CreateToggle("Noclip (Traverser les murs)", false, function(val)
+        states.noclip = val
         if states.noclip then
             noclipConnection = RunService.Stepped:Connect(function()
                 if player.Character then
-                    for _, part in pairs(player.Character:GetDescendants()) do
-                        if part:IsA("BasePart") then
-                            part.CanCollide = false
-                        end
+                    for _, p in pairs(player.Character:GetDescendants()) do
+                        if p:IsA("BasePart") then p.CanCollide = false end
                     end
                 end
             end)
@@ -320,25 +770,20 @@ local function LoadMainHub()
         end
     end)
 
-    -- INFINITE JUMP
+    TabMain:CreateToggle("Saut Infini", false, function(val) states.infJump = val end)
     UserInputService.JumpRequest:Connect(function()
         if states.infJump and player.Character and player.Character:FindFirstChild("Humanoid") then
             player.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
         end
     end)
-    local InfJumpToggle = Tabs.Main:AddToggle("InfJumpToggle", {Title = "Saut Infini", Default = false })
-    InfJumpToggle:OnChanged(function(state) states.infJump = state end)
 
-    -- CLICK TP
     local clickTpConnection
-    local ClickTpToggle = Tabs.Main:AddToggle("ClickTpToggle", {Title = "Click TP (Ctrl Gauche + Clic)", Default = false })
-    ClickTpToggle:OnChanged(function(state)
-        states.clickTp = state
+    TabMain:CreateToggle("Click TP (Ctrl + Clic)", false, function(val)
+        states.clickTp = val
         if states.clickTp then
             clickTpConnection = mouse.Button1Down:Connect(function()
                 if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-                    local pos = mouse.Hit.Position
-                    player.Character.HumanoidRootPart.CFrame = CFrame.new(pos + Vector3.new(0, 3, 0))
+                    player.Character.HumanoidRootPart.CFrame = CFrame.new(mouse.Hit.Position + Vector3.new(0, 3, 0))
                 end
             end)
         else
@@ -346,56 +791,38 @@ local function LoadMainHub()
         end
     end)
 
-    -- ==========================================
-    -- 4. LOGIQUE DES VISUELS (ESP)
-    -- ==========================================
-    local SectionESP = Tabs.Visuals:AddSection("Wallhack & Highlights")
-
+    -- === TAB VISUELS ===
+    local TabVisuals = Lib:CreateTab("Visuels & ESP", "👁️")
     local espFolder = Instance.new("Folder", CoreGui)
-    espFolder.Name = "FluentESP_Highlights"
-
+    espFolder.Name = "67FeetCustomESP"
     local function refreshESP()
         espFolder:ClearAllChildren()
         if not states.esp then return end
         for _, p in pairs(Players:GetPlayers()) do
             if p ~= player and p.Character then
-                local highlight = Instance.new("Highlight")
-                highlight.Parent = espFolder
-                highlight.Adornee = p.Character
-                highlight.FillColor = Color3.fromRGB(255, 0, 0)
-                highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
-                highlight.FillTransparency = 0.5
+                local hl = Instance.new("Highlight", espFolder)
+                hl.Adornee = p.Character
+                hl.FillColor = Color3.fromRGB(255, 175, 50)
+                hl.OutlineColor = Color3.fromRGB(255, 255, 255)
+                hl.FillTransparency = 0.5
             end
         end
     end
+    TabVisuals:CreateToggle("Activer l'ESP", false, function(val) states.esp = val; refreshESP() end)
+    Players.PlayerAdded:Connect(function(p) p.CharacterAdded:Connect(function() task.wait(1) refreshESP() end) end)
 
-    local ESPToggle = Tabs.Visuals:AddToggle("ESPToggle", {Title = "Activer l'ESP (Joueurs)", Default = false })
-    ESPToggle:OnChanged(function(state)
-        states.esp = state
-        refreshESP()
-    end)
-
-    Players.PlayerAdded:Connect(function(p)
-        p.CharacterAdded:Connect(function() task.wait(1) refreshESP() end)
-    end)
-
-    -- ==========================================
-    -- 5. LOGIQUE DE FARMING
-    -- ==========================================
-    local SectionAura = Tabs.Farm:AddSection("Auto Tap Aura")
-
-    local AuraRadiusSlider = Tabs.Farm:AddSlider("AuraRadius", {
-        Title = "Taille de la zone (Rayon)", Default = 20, Min = 5, Max = 120, Rounding = 1,
-        Callback = function(Value) states.auraRadius = Value end
-    })
-
+    -- === TAB FARMING ===
+    local TabFarm = Lib:CreateTab("Farming", "⛏️")
+    TabFarm:CreateLabel("Auto Tap Aura")
+    TabFarm:CreateSlider("Rayon Aura", 5, 120, 20, function(val) states.auraRadius = val end)
+    
     local auraVisual = Instance.new("Part")
     auraVisual.Shape = Enum.PartType.Cylinder
     auraVisual.Anchored = true
     auraVisual.CanCollide = false
     auraVisual.CastShadow = false
     auraVisual.Transparency = 0.85
-    auraVisual.Color = Color3.fromRGB(160, 32, 240)
+    auraVisual.Color = Color3.fromRGB(255, 175, 50)
     auraVisual.Material = Enum.Material.ForceField
 
     RunService.Heartbeat:Connect(function()
@@ -408,9 +835,8 @@ local function LoadMainHub()
         end
     end)
 
-    local AutoTapToggle = Tabs.Farm:AddToggle("AutoTapToggle", {Title = "Activer Auto Tap Aura", Default = false })
-    AutoTapToggle:OnChanged(function(state)
-        states.autoTapAura = state
+    TabFarm:CreateToggle("Activer Auto Tap", false, function(val)
+        states.autoTapAura = val
         if states.autoTapAura then
             task.spawn(function()
                 while states.autoTapAura do
@@ -420,19 +846,15 @@ local function LoadMainHub()
                         local rootPos = char.HumanoidRootPart.Position
                         local network = ReplicatedStorage:FindFirstChild("Network")
                         local damageRemote = network and network:FindFirstChild("Breakables_PlayerDealDamage")
-                        
                         if damageRemote then
                             local breakablesFolder = workspace:FindFirstChild("__THINGS") and workspace.__THINGS:FindFirstChild("Breakables")
                             if breakablesFolder then
                                 for _, group in pairs(breakablesFolder:GetChildren()) do
                                     for _, breakable in pairs(group:GetChildren()) do
                                         local hitbox = breakable:FindFirstChild("Hitbox")
-                                        if hitbox then
-                                            local distance = (hitbox.Position - rootPos).Magnitude
-                                            if distance <= states.auraRadius then
-                                                damageRemote:FireServer(group.Name)
-                                                damageRemote:FireServer(group.Name) 
-                                            end
+                                        if hitbox and (hitbox.Position - rootPos).Magnitude <= states.auraRadius then
+                                            damageRemote:FireServer(group.Name)
+                                            damageRemote:FireServer(group.Name) 
                                         end
                                     end
                                 end
@@ -445,42 +867,28 @@ local function LoadMainHub()
         end
     end)
 
-    local SectionWorld = Tabs.Farm:AddSection("Monde & Récupération")
-
-    local AutoCollectToggle = Tabs.Farm:AddToggle("AutoCollectToggle", {Title = "Auto Collect Orbes & Sacs", Default = false })
-    AutoCollectToggle:OnChanged(function(state)
-        states.autoCollect = state
+    TabFarm:CreateLabel("Monde & Récupération")
+    TabFarm:CreateToggle("Auto Collect (Orbes & Sacs)", false, function(val)
+        states.autoCollect = val
         if states.autoCollect then
             task.spawn(function()
                 while states.autoCollect do
                     pcall(function()
                         local network = ReplicatedStorage:FindFirstChild("Network")
                         if not network then return end
-
-                        local collectOrbsRemote = network:FindFirstChild("Orbs: Collect")
+                        local cOrbs = network:FindFirstChild("Orbs: Collect")
                         local orbsFolder = workspace:FindFirstChild("__THINGS") and workspace.__THINGS:FindFirstChild("Orbs")
-                        
-                        if collectOrbsRemote and orbsFolder then
-                            local orbIds = {}
-                            local orbsList = orbsFolder:GetChildren()
-                            for _, orb in pairs(orbsList) do table.insert(orbIds, orb.Name) end
-                            if #orbIds > 0 then
-                                collectOrbsRemote:FireServer(orbIds)
-                                for _, orb in pairs(orbsList) do orb:Destroy() end
-                            end
+                        if cOrbs and orbsFolder then
+                            local ids = {}
+                            for _, orb in pairs(orbsFolder:GetChildren()) do table.insert(ids, orb.Name) end
+                            if #ids > 0 then cOrbs:FireServer(ids) for _, orb in pairs(orbsFolder:GetChildren()) do orb:Destroy() end end
                         end
-
-                        local collectLootbagsRemote = network:FindFirstChild("Lootbags_Claim")
-                        local lootbagsFolder = workspace:FindFirstChild("__THINGS") and workspace.__THINGS:FindFirstChild("Lootbags")
-                        
-                        if collectLootbagsRemote and lootbagsFolder then
-                            local lootbagIds = {}
-                            local bagsList = lootbagsFolder:GetChildren()
-                            for _, bag in pairs(bagsList) do table.insert(lootbagIds, bag.Name) end
-                            if #lootbagIds > 0 then
-                                collectLootbagsRemote:FireServer(lootbagIds)
-                                for _, bag in pairs(bagsList) do bag:Destroy() end
-                            end
+                        local cLoot = network:FindFirstChild("Lootbags_Claim")
+                        local lootFolder = workspace:FindFirstChild("__THINGS") and workspace.__THINGS:FindFirstChild("Lootbags")
+                        if cLoot and lootFolder then
+                            local ids = {}
+                            for _, bag in pairs(lootFolder:GetChildren()) do table.insert(ids, bag.Name) end
+                            if #ids > 0 then cLoot:FireServer(ids) for _, bag in pairs(lootFolder:GetChildren()) do bag:Destroy() end end
                         end
                     end)
                     task.wait(0.2)
@@ -489,35 +897,20 @@ local function LoadMainHub()
         end
     end)
 
-    local AutoBuyZoneToggle = Tabs.Farm:AddToggle("AutoBuyZoneToggle", {Title = "Auto Buy Zones (Déblocage Auto)", Default = false })
-    AutoBuyZoneToggle:OnChanged(function(state)
-        states.autoBuyZone = state
+    TabFarm:CreateToggle("Auto Buy Zones", false, function(val)
+        states.autoBuyZone = val
         if states.autoBuyZone then
             task.spawn(function()
                 while states.autoBuyZone do
                     pcall(function()
-                        local network = ReplicatedStorage:FindFirstChild("Network")
-                        local purchaseRemote = network and network:FindFirstChild("Zones_RequestPurchase")
-                        local mapFolder = workspace:FindFirstChild("Map")
-                        
-                        if purchaseRemote and mapFolder then
-                            for _, zoneFolder in pairs(mapFolder:GetChildren()) do
-                                local interact = zoneFolder:FindFirstChild("INTERACT")
-                                local gate = interact and interact:FindFirstChild("Gate")
-                                
-                                if gate then
-                                    local innerGate = gate:FindFirstChild("Gate")
-                                    local gateHUD = innerGate and innerGate:FindFirstChild("GateHUD")
-                                    
-                                    if innerGate and innerGate.Transparency == 0 and gateHUD and gateHUD.Enabled == true then
-                                        local zoneName = string.match(zoneFolder.Name, "|%s*(.+)")
-                                        local zoneNameLabel = gateHUD:FindFirstChild("ZoneName")
-                                        local targetZoneName = (zoneNameLabel and zoneNameLabel.Text) or zoneName
-                                        
-                                        if targetZoneName then
-                                            task.spawn(function() pcall(function() purchaseRemote:InvokeServer(targetZoneName) end) end)
-                                        end
-                                    end
+                        local pRemote = ReplicatedStorage:FindFirstChild("Network") and ReplicatedStorage.Network:FindFirstChild("Zones_RequestPurchase")
+                        local mapF = workspace:FindFirstChild("Map")
+                        if pRemote and mapF then
+                            for _, z in pairs(mapF:GetChildren()) do
+                                local gateHUD = z:FindFirstChild("INTERACT") and z.INTERACT:FindFirstChild("Gate") and z.INTERACT.Gate:FindFirstChild("Gate") and z.INTERACT.Gate.Gate:FindFirstChild("GateHUD")
+                                if gateHUD and gateHUD.Enabled then
+                                    local zNameLabel = gateHUD:FindFirstChild("ZoneName")
+                                    if zNameLabel then task.spawn(function() pcall(function() pRemote:InvokeServer(zNameLabel.Text) end) end) end
                                 end
                             end
                         end
@@ -528,24 +921,16 @@ local function LoadMainHub()
         end
     end)
 
-    local SectionDigsite = Tabs.Farm:AddSection("Mini-jeu: Digsite")
-
-    local DigsiteModeDropdown = Tabs.Farm:AddDropdown("DigsiteModeDropdown", {
-        Title = "Mode de Mining",
-        Values = {"All Mine", "Efficiency"},
-        Multi = false,
-        Default = 1,
-    })
-    DigsiteModeDropdown:OnChanged(function(Value) states.digsiteMode = Value end)
-
-    local AutoMineToggle = Tabs.Farm:AddToggle("AutoMineToggle", {Title = "Activer Auto Mine", Default = false })
-    AutoMineToggle:OnChanged(function(state)
-        states.autoMine = state
+    TabFarm:CreateLabel("Mini-jeu: Digsite (RESTAURÉ)")
+    -- LE DROPDOWN DIGSITE EST ICI (RÉPARÉ)
+    TabFarm:CreateDropdown("Mode de Mining", {"All Mine", "Efficiency"}, false, function(val) states.digsiteMode = val[1] end)
+    
+    TabFarm:CreateToggle("Activer Auto Mine", false, function(val)
+        states.autoMine = val
         if states.autoMine then
             pcall(function()
                 local digsiteFolder = workspace:FindFirstChild("__THINGS") and workspace.__THINGS:FindFirstChild("Instances") and workspace.__THINGS.Instances:FindFirstChild("Digsite")
-                local teleports = digsiteFolder and digsiteFolder:FindFirstChild("Teleports")
-                local enterPart = teleports and teleports:FindFirstChild("Enter")
+                local enterPart = digsiteFolder and digsiteFolder:FindFirstChild("Teleports") and digsiteFolder.Teleports:FindFirstChild("Enter")
                 if enterPart and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
                     player.Character.HumanoidRootPart.CFrame = enterPart.CFrame
                 end
@@ -559,22 +944,14 @@ local function LoadMainHub()
                 while states.autoMine do
                     local foundAndMined = false
                     pcall(function()
-                        local network = ReplicatedStorage:FindFirstChild("Network")
-                        local digRemote = network and network:FindFirstChild("Instancing_FireCustomFromClient")
-                        
-                        local instances = workspace:FindFirstChild("__THINGS") and workspace.__THINGS:FindFirstChild("__INSTANCE_CONTAINER")
-                        local activeInstance = instances and instances:FindFirstChild("Active")
-                        local digsite = activeInstance and activeInstance:FindFirstChild("Digsite")
-                        local importantFolder = digsite and digsite:FindFirstChild("Important")
+                        local digRemote = ReplicatedStorage:FindFirstChild("Network") and ReplicatedStorage.Network:FindFirstChild("Instancing_FireCustomFromClient")
+                        local importantFolder = workspace:FindFirstChild("__THINGS") and workspace.__THINGS:FindFirstChild("__INSTANCE_CONTAINER") and workspace.__THINGS.__INSTANCE_CONTAINER:FindFirstChild("Active") and workspace.__THINGS.__INSTANCE_CONTAINER.Active:FindFirstChild("Digsite") and workspace.__THINGS.__INSTANCE_CONTAINER.Active.Digsite:FindFirstChild("Important")
                         
                         if digRemote and importantFolder then
                             local minX, maxX, minZ, maxZ = 1, 9, 1, 9
-                            
                             if #gridCoords == 0 then
                                 for x = minX + 1, maxX, 2 do
-                                    for z = minZ + 1, maxZ, 2 do
-                                        table.insert(gridCoords, {x = x, z = z})
-                                    end
+                                    for z = minZ + 1, maxZ, 2 do table.insert(gridCoords, {x = x, z = z}) end
                                 end
                             end
                             
@@ -590,13 +967,11 @@ local function LoadMainHub()
                                     for _, item in pairs(folder:GetDescendants()) do
                                         if item:IsA("Model") or item:IsA("BasePart") then
                                             if ignoredBlocks[item] then continue end
-                                            
                                             local coord = item:GetAttribute("Coord")
                                             if not coord and item.Name:match("%d+, %d+, %d+") then
                                                 local split = string.split(item.Name, ", ")
                                                 coord = Vector3.new(tonumber(split[1]), tonumber(split[2]), tonumber(split[3]))
                                             end
-                                            
                                             if coord and typeof(coord) == "Vector3" then
                                                 local coordKey = tostring(coord)
                                                 if coord.X >= minX and coord.X <= maxX and coord.Z >= minZ and coord.Z <= maxZ then
@@ -617,44 +992,35 @@ local function LoadMainHub()
                                     table.sort(validBlocks, function(a, b) return a.coord.Y < b.coord.Y end)
                                     local targetData = validBlocks[1]
                                     local block = targetData.instance
-                                    local coord = targetData.coord
-                                    local digType = targetData.type
-                                    
-                                    local char = player.Character
-                                    local root = char and char:FindFirstChild("HumanoidRootPart")
-                                    
+                                    local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
                                     if block and block.Parent then
                                         foundAndMined = true
                                         local hitCount = 0
-                                        
                                         while block and block.Parent and hitCount < 25 do
                                             if not states.autoMine or states.digsiteMode ~= "All Mine" then break end
                                             if root and block.Parent then
                                                 root.CFrame = CFrame.new(block:GetPivot().Position + Vector3.new(0, 3.5, 0))
                                                 root.Velocity = Vector3.zero
                                             end
-                                            digRemote:FireServer("Digsite", digType, coord)
+                                            digRemote:FireServer("Digsite", targetData.type, targetData.coord)
                                             hitCount = hitCount + 1
                                             task.wait(0.02)
                                         end
-                                        if block and block.Parent and hitCount >= 25 then ignoredBlocks[block] = true end
+                                        if hitCount >= 25 then ignoredBlocks[block] = true end
                                     end
                                 end
                                 
                             elseif states.digsiteMode == "Efficiency" then
                                 local directChestTarget = nil
-                                
                                 if activeChests then
                                     for _, item in pairs(activeChests:GetDescendants()) do
                                         if item:IsA("Model") or item:IsA("BasePart") then
                                             if ignoredBlocks[item] then continue end
-                                            
                                             local coord = item:GetAttribute("Coord")
                                             if not coord and item.Name:match("%d+, %d+, %d+") then
                                                 local split = string.split(item.Name, ", ")
                                                 coord = Vector3.new(tonumber(split[1]), tonumber(split[2]), tonumber(split[3]))
                                             end
-                                            
                                             if coord and typeof(coord) == "Vector3" then
                                                 if coord.X >= minX and coord.X <= maxX and coord.Z >= minZ and coord.Z <= maxZ then
                                                     directChestTarget = {instance = item, coord = coord, type = "DigChest"}
@@ -665,68 +1031,51 @@ local function LoadMainHub()
                                     end
                                 end
                                 
-                                local targetData = nil
-                                
-                                if directChestTarget then
-                                    targetData = directChestTarget
-                                else
-                                    if #gridCoords > 0 then
-                                        local colTarget = gridCoords[gridIndex]
-                                        local colBlocks = {}
-                                        
-                                        if activeBlocks then
-                                            for _, item in pairs(activeBlocks:GetDescendants()) do
-                                                if item:IsA("Model") or item:IsA("BasePart") then
-                                                    if ignoredBlocks[item] then continue end
-                                                    
-                                                    local coord = item:GetAttribute("Coord")
-                                                    if not coord and item.Name:match("%d+, %d+, %d+") then
-                                                        local split = string.split(item.Name, ", ")
-                                                        coord = Vector3.new(tonumber(split[1]), tonumber(split[2]), tonumber(split[3]))
-                                                    end
-                                                    
-                                                    if coord and typeof(coord) == "Vector3" then
-                                                        if coord.X == colTarget.x and coord.Z == colTarget.z then
-                                                            table.insert(colBlocks, {instance = item, coord = coord, type = "DigBlock"})
-                                                        end
-                                                    end
+                                local targetData = directChestTarget
+                                if not targetData and #gridCoords > 0 then
+                                    local colTarget = gridCoords[gridIndex]
+                                    local colBlocks = {}
+                                    if activeBlocks then
+                                        for _, item in pairs(activeBlocks:GetDescendants()) do
+                                            if item:IsA("Model") or item:IsA("BasePart") then
+                                                if ignoredBlocks[item] then continue end
+                                                local coord = item:GetAttribute("Coord")
+                                                if not coord and item.Name:match("%d+, %d+, %d+") then
+                                                    local split = string.split(item.Name, ", ")
+                                                    coord = Vector3.new(tonumber(split[1]), tonumber(split[2]), tonumber(split[3]))
+                                                end
+                                                if coord and typeof(coord) == "Vector3" and coord.X == colTarget.x and coord.Z == colTarget.z then
+                                                    table.insert(colBlocks, {instance = item, coord = coord, type = "DigBlock"})
                                                 end
                                             end
                                         end
-                                        
-                                        if #colBlocks > 0 then
-                                            table.sort(colBlocks, function(a, b) return a.coord.Y < b.coord.Y end)
-                                            targetData = colBlocks[1]
-                                        else
-                                            gridIndex = gridIndex + 1
-                                            if gridIndex > #gridCoords then gridIndex = 1 end
-                                        end
+                                    end
+                                    if #colBlocks > 0 then
+                                        table.sort(colBlocks, function(a, b) return a.coord.Y < b.coord.Y end)
+                                        targetData = colBlocks[1]
+                                    else
+                                        gridIndex = gridIndex + 1
+                                        if gridIndex > #gridCoords then gridIndex = 1 end
                                     end
                                 end
                                 
                                 if targetData then
                                     local block = targetData.instance
-                                    local coord = targetData.coord
-                                    local digType = targetData.type
-                                    
-                                    local char = player.Character
-                                    local root = char and char:FindFirstChild("HumanoidRootPart")
-                                    
+                                    local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
                                     if block and block.Parent then
                                         foundAndMined = true
                                         local hitCount = 0
-                                        
                                         while block and block.Parent and hitCount < 25 do
                                             if not states.autoMine or states.digsiteMode ~= "Efficiency" then break end
                                             if root and block.Parent then
                                                 root.CFrame = CFrame.new(block:GetPivot().Position + Vector3.new(0, 3.5, 0))
                                                 root.Velocity = Vector3.zero
                                             end
-                                            digRemote:FireServer("Digsite", digType, coord)
+                                            digRemote:FireServer("Digsite", targetData.type, targetData.coord)
                                             hitCount = hitCount + 1
                                             task.wait(0.02)
                                         end
-                                        if block and block.Parent and hitCount >= 25 then ignoredBlocks[block] = true end
+                                        if hitCount >= 25 then ignoredBlocks[block] = true end
                                     end
                                 end
                             end
@@ -739,78 +1088,44 @@ local function LoadMainHub()
         end
     end)
 
-    -- ==========================================
-    -- 6. LOGIQUE DES OEUFS (AUTO EGG)
-    -- ==========================================
-    local SectionEggs = Tabs.Eggs:AddSection("Système d'Éclosion")
-
+    -- === TAB OEUFS ===
+    local TabEggs = Lib:CreateTab("Oeufs", "🥚")
     local function GetEggList()
-        local rawEggList = {}
-        local eggFolder = workspace:FindFirstChild("__DIRECTORY") and workspace.__DIRECTORY:FindFirstChild("Eggs") and workspace.__DIRECTORY.Eggs:FindFirstChild("Zone Eggs")
-        
-        if eggFolder then
-            for _, worldFolder in pairs(eggFolder:GetChildren()) do
-                local releaseFolder = worldFolder:FindFirstChild("Release")
-                if releaseFolder then
-                    for _, egg in pairs(releaseFolder:GetChildren()) do
-                        local numStr, eggName = string.match(egg.Name, "^(%d+)%s*|%s*(.+)")
-                        if eggName then
-                            table.insert(rawEggList, {num = tonumber(numStr) or 999, name = eggName})
-                        else
-                            table.insert(rawEggList, {num = 999, name = egg.Name})
-                        end
+        local raw = {}
+        local eF = workspace:FindFirstChild("__DIRECTORY") and workspace.__DIRECTORY:FindFirstChild("Eggs") and workspace.__DIRECTORY.Eggs:FindFirstChild("Zone Eggs")
+        if eF then
+            for _, w in pairs(eF:GetChildren()) do
+                local r = w:FindFirstChild("Release")
+                if r then
+                    for _, e in pairs(r:GetChildren()) do
+                        local n, nm = string.match(e.Name, "^(%d+)%s*|%s*(.+)")
+                        table.insert(raw, {num = tonumber(n) or 999, name = nm or e.Name})
                     end
                 end
             end
         end
-
-        table.sort(rawEggList, function(a, b) return a.num < b.num end)
-
-        local displayList = {}
-        local nameToIdMap = {}
-
-        for _, eggData in ipairs(rawEggList) do
-            local displayStr = eggData.num .. " - " .. eggData.name
-            table.insert(displayList, displayStr)
-            nameToIdMap[displayStr] = eggData.name
+        table.sort(raw, function(a, b) return a.num < b.num end)
+        local dList, nMap = {}, {}
+        for _, ed in ipairs(raw) do
+            local dStr = ed.num .. " - " .. ed.name
+            table.insert(dList, dStr)
+            nMap[dStr] = ed.name
         end
-
-        if #displayList == 0 then
-            table.insert(displayList, "20 - Tentacle Egg")
-            nameToIdMap["20 - Tentacle Egg"] = "Tentacle Egg"
-        end
-
-        return displayList, nameToIdMap
+        if #dList == 0 then table.insert(dList, "20 - Tentacle Egg"); nMap["20 - Tentacle Egg"] = "Tentacle Egg" end
+        return dList, nMap
     end
-
-    local EggDisplayList, EggNameToIdMap = GetEggList()
-
-    local EggDropdown = Tabs.Eggs:AddDropdown("EggDropdown", {
-        Title = "Sélectionner un Œuf",
-        Values = EggDisplayList,
-        Multi = false,
-        Default = 1,
-    })
-
-    EggDropdown:OnChanged(function(Value)
-        states.selectedEgg = EggNameToIdMap[Value] or "Tentacle Egg"
-    end)
-
-    local AutoEggToggle = Tabs.Eggs:AddToggle("AutoEggToggle", {Title = "Activer Auto Open Egg (x99)", Default = false })
-    AutoEggToggle:OnChanged(function(state)
-        states.autoEgg = state
+    
+    local eList, eMap = GetEggList()
+    TabEggs:CreateDropdown("Sélectionner un Œuf", eList, false, function(val) states.selectedEgg = eMap[val[1]] or "Tentacle Egg" end)
+    TabEggs:CreateToggle("Auto Open (x99)", false, function(val)
+        states.autoEgg = val
         if states.autoEgg then
             task.spawn(function()
                 while states.autoEgg do
                     pcall(function()
-                        if states.selectedEgg and states.selectedEgg ~= "" then
-                            local network = ReplicatedStorage:FindFirstChild("Network")
-                            local eggRemote = network and network:FindFirstChild("Eggs_RequestPurchase")
-                            
-                            if eggRemote then
-                                -- Envoie 99 au lieu de 1 pour éclore le maximum possible
-                                eggRemote:InvokeServer(states.selectedEgg, 99)
-                            end
+                        if states.selectedEgg ~= "" then
+                            local eRemote = ReplicatedStorage:FindFirstChild("Network") and ReplicatedStorage.Network:FindFirstChild("Eggs_RequestPurchase")
+                            if eRemote then eRemote:InvokeServer(states.selectedEgg, 99) end
                         end
                     end)
                     task.wait(0.1)
@@ -818,118 +1133,48 @@ local function LoadMainHub()
             end)
         end
     end)
-
-    local SectionOptim = Tabs.Eggs:AddSection("Optimisation (Anti-Lag)")
-
-    local DisableAnimToggle = Tabs.Eggs:AddToggle("DisableAnimToggle", {Title = "Désactiver Animations d'Œufs", Default = false })
-    DisableAnimToggle:OnChanged(function(state)
-        states.disableEggAnimation = state
-    end)
-
+    TabEggs:CreateToggle("No Animation (Anti-Lag)", false, function(val) states.disableEggAnimation = val end)
+    
     task.spawn(function()
         while task.wait(0.1) do
             if states.disableEggAnimation then
                 pcall(function()
                     for _, child in pairs(camera:GetChildren()) do
-                        if child.Name == "EggOpenLight" or child.Name == "Eggs" or child.Name == "Pets" then
-                            child:Destroy()
-                        end
+                        if child.Name == "EggOpenLight" or child.Name == "Eggs" or child.Name == "Pets" then child:Destroy() end
                     end
-                    
                     for _, child in pairs(workspace:GetChildren()) do
                         if child.Name == "EggOpenLight" or child.Name == "Eggs" or child.Name == "Pets" then
-                            if child:IsA("Model") or child:IsA("Folder") then
-                                child:Destroy()
-                            end
+                            if child:IsA("Model") or child:IsA("Folder") then child:Destroy() end
                         end
                     end
                 end)
             end
         end
     end)
-
     camera.ChildAdded:Connect(function(child)
-        if states.disableEggAnimation then
-            if child.Name == "EggOpenLight" or child.Name == "Eggs" or child.Name == "Pets" then
-                task.spawn(function()
-                    task.wait() 
-                    if child and child.Parent then child:Destroy() end
-                end)
-            end
+        if states.disableEggAnimation and (child.Name == "EggOpenLight" or child.Name == "Eggs" or child.Name == "Pets") then
+            task.spawn(function() task.wait() if child and child.Parent then child:Destroy() end end)
         end
     end)
 
-    -- ==========================================
-    -- 7. LOGIQUE DES ÉVÉNEMENTS (LUCKY DEFENSE)
-    -- ==========================================
-    local SectionLucky = Tabs.Event:AddSection("Lucky Defense")
-
-    local defaultUpgrades = {
-        "DefenseMoreDamage", "DefenseMoreLuck", "DefenseMoreCoins", 
-        "DefenseHugeChance", "DefenseRewardsLuck", "DefenseMoreDiamonds",
-        "DefenseAutoClicker", "DefenseCritDamage"
-    }
-
-    local EventUpgradesDropdown = Tabs.Event:AddDropdown("EventUpgradesDropdown", {
-        Title = "Améliorations (Choix Multiple)",
-        Values = defaultUpgrades,
-        Multi = true,
-        Default = {},
-    })
-
-    EventUpgradesDropdown:OnChanged(function(Value)
-        states.selectedEventUpgrades = Value
+    -- === TAB EVENTS ===
+    local TabEvent = Lib:CreateTab("Événements", "⭐")
+    local defUpgrades = {"DefenseMoreDamage", "DefenseMoreLuck", "DefenseMoreCoins", "DefenseHugeChance", "DefenseRewardsLuck", "DefenseMoreDiamonds", "DefenseAutoClicker", "DefenseCritDamage"}
+    TabEvent:CreateLabel("Lucky Defense Upgrades")
+    local EventUpgradesDrop = TabEvent:CreateDropdown("Améliorations à acheter", defUpgrades, true, function(val)
+        states.selectedEventUpgrades = {}
+        for _, upg in ipairs(val) do states.selectedEventUpgrades[upg] = true end
     end)
-
-    task.spawn(function()
-        local knownUpgrades = {}
-        for _, v in ipairs(defaultUpgrades) do table.insert(knownUpgrades, v) end
-        
-        while task.wait(5) do
-            pcall(function()
-                local instances = workspace:FindFirstChild("__THINGS") and workspace.__THINGS:FindFirstChild("__INSTANCE_CONTAINER")
-                local active = instances and instances:FindFirstChild("Active")
-                local luckyDefense = active and active:FindFirstChild("LuckyDefense")
-                local upgradesFolder = luckyDefense and luckyDefense:FindFirstChild("Upgrades")
-                
-                if upgradesFolder then
-                    local newFound = false
-                    for _, upg in pairs(upgradesFolder:GetDescendants()) do
-                        if upg:IsA("Model") and upg.Name ~= "Folder" and not table.find(knownUpgrades, upg.Name) then
-                            table.insert(knownUpgrades, upg.Name)
-                            newFound = true
-                        end
-                    end
-                    if newFound then
-                        EventUpgradesDropdown:SetValues(knownUpgrades)
-                    end
-                end
-            end)
-        end
-    end)
-
-    local EventUpgradesToggle = Tabs.Event:AddToggle("EventUpgradesToggle", {Title = "Auto Buy Upgrades", Default = false })
-    EventUpgradesToggle:OnChanged(function(state)
-        states.autoBuyEventUpgrades = state
+    TabEvent:CreateToggle("Auto Buy Lucky Upgrades", false, function(val)
+        states.autoBuyEventUpgrades = val
         if states.autoBuyEventUpgrades then
             task.spawn(function()
                 while states.autoBuyEventUpgrades do
                     pcall(function()
-                        local network = ReplicatedStorage:FindFirstChild("Network")
-                        local upgradeRemote = network and network:FindFirstChild("EventUpgrades: Purchase")
-                        
-                        if upgradeRemote then
-                            local instances = workspace:FindFirstChild("__THINGS") and workspace.__THINGS:FindFirstChild("__INSTANCE_CONTAINER")
-                            local active = instances and instances:FindFirstChild("Active")
-                            local luckyDefense = active and active:FindFirstChild("LuckyDefense")
-                            local upgradesFolder = luckyDefense and luckyDefense:FindFirstChild("Upgrades")
-                            
-                            if upgradesFolder then
-                                for _, upgrade in pairs(upgradesFolder:GetDescendants()) do
-                                    if upgrade:IsA("Model") and upgrade.Name ~= "Folder" and states.selectedEventUpgrades and states.selectedEventUpgrades[upgrade.Name] then
-                                        upgradeRemote:InvokeServer(upgrade.Name)
-                                    end
-                                end
+                        local uRemote = ReplicatedStorage:FindFirstChild("Network") and ReplicatedStorage.Network:FindFirstChild("EventUpgrades: Purchase")
+                        if uRemote then
+                            for uName, active in pairs(states.selectedEventUpgrades) do
+                                if active then uRemote:InvokeServer(uName) end
                             end
                         end
                     end)
@@ -938,39 +1183,47 @@ local function LoadMainHub()
             end)
         end
     end)
+    
+    task.spawn(function()
+        local knownUpgrades = {}
+        for _, v in ipairs(defUpgrades) do table.insert(knownUpgrades, v) end
+        while task.wait(5) do
+            pcall(function()
+                local uF = workspace:FindFirstChild("__THINGS") and workspace.__THINGS:FindFirstChild("__INSTANCE_CONTAINER") and workspace.__THINGS.__INSTANCE_CONTAINER:FindFirstChild("Active") and workspace.__THINGS.__INSTANCE_CONTAINER.Active:FindFirstChild("LuckyDefense") and workspace.__THINGS.__INSTANCE_CONTAINER.Active.LuckyDefense:FindFirstChild("Upgrades")
+                if uF then
+                    local newFound = false
+                    for _, upg in pairs(uF:GetDescendants()) do
+                        if upg:IsA("Model") and upg.Name ~= "Folder" and not table.find(knownUpgrades, upg.Name) then
+                            table.insert(knownUpgrades, upg.Name)
+                            newFound = true
+                        end
+                    end
+                    if newFound then EventUpgradesDrop.Refresh(knownUpgrades) end
+                end
+            end)
+        end
+    end)
 
-    -- ==========================================
-    -- 8. LOGIQUE DES CONSOMMABLES AUTOMATIQUES
-    -- ==========================================
-    local SectionPotions = Tabs.Consumables:AddSection("Automatisation des Potions")
-
-    local PotionsDropdown = Tabs.Consumables:AddDropdown("PotionsDropdown", {
-        Title = "Sélectionner Potions",
-        Values = {"Coins Potion", "Luck Potion", "Damage Potion", "Speed Potion", "Treasure Hunter Potion"},
-        Multi = true,
-        Default = {},
-    })
-    PotionsDropdown:OnChanged(function(Value) states.selectedPotions = Value end)
-
-    local AutoPotionsToggle = Tabs.Consumables:AddToggle("AutoPotionsToggle", {Title = "Activer Auto Potions", Default = false })
-    AutoPotionsToggle:OnChanged(function(state)
-        states.autoConsumePotions = state
+    -- === TAB BOOSTS ===
+    local TabBoosts = Lib:CreateTab("Boosts", "🧪")
+    TabBoosts:CreateLabel("Auto Potions")
+    TabBoosts:CreateDropdown("Potions à utiliser", {"Coins Potion", "Luck Potion", "Damage Potion", "Speed Potion", "Treasure Hunter Potion"}, true, function(val)
+        states.selectedPotions = {}
+        for _, pot in ipairs(val) do states.selectedPotions[pot] = true end
+    end)
+    TabBoosts:CreateToggle("Démarrer Auto Potions", false, function(val)
+        states.autoConsumePotions = val
         if states.autoConsumePotions then
             task.spawn(function()
                 while states.autoConsumePotions do
                     pcall(function()
-                        local network = ReplicatedStorage:FindFirstChild("Network")
-                        local potionRemote = network and network:FindFirstChild("Potions: Consume")
-                        
-                        if potionRemote then
-                            for potionType, active in pairs(states.selectedPotions) do
+                        local pRemote = ReplicatedStorage:FindFirstChild("Network") and ReplicatedStorage.Network:FindFirstChild("Potions: Consume")
+                        if pRemote then
+                            for pType, active in pairs(states.selectedPotions) do
                                 if active and states.autoConsumePotions then
-                                    local matches = getInventoryItems(potionType, "Potion")
-                                    for _, item in ipairs(matches) do
-                                        if states.autoConsumePotions then
-                                            potionRemote:FireServer(item.guid, 1)
-                                            task.wait(0.1)
-                                        end
+                                    local m = getInventoryItems(pType, "Potion")
+                                    for _, item in ipairs(m) do
+                                        if states.autoConsumePotions then pRemote:FireServer(item.guid, 1); task.wait(0.1) end
                                     end
                                 end
                             end
@@ -981,35 +1234,20 @@ local function LoadMainHub()
             end)
         end
     end)
-
-    local SectionFlags = Tabs.Consumables:AddSection("Automatisation des Drapeaux")
-
-    local FlagsDropdown = Tabs.Consumables:AddDropdown("FlagsDropdown", {
-        Title = "Sélectionner un Drapeau",
-        Values = {"Coins Flag", "Magnet Flag", "Haste Flag", "Fortune Flag", "Diamonds Flag"},
-        Multi = false,
-        Default = 1,
-    })
-    FlagsDropdown:OnChanged(function(Value) states.selectedFlag = Value end)
-
-    local AutoFlagsToggle = Tabs.Consumables:AddToggle("AutoFlagsToggle", {Title = "Activer Auto Drapeaux", Default = false })
-    AutoFlagsToggle:OnChanged(function(state)
-        states.autoPlaceFlags = state
+    TabBoosts:CreateLabel("Auto Drapeaux")
+    TabBoosts:CreateDropdown("Sélectionner Drapeau", {"Coins Flag", "Magnet Flag", "Haste Flag", "Fortune Flag", "Diamonds Flag"}, false, function(val) states.selectedFlag = val[1] or "" end)
+    TabBoosts:CreateToggle("Démarrer Auto Drapeau", false, function(val)
+        states.autoPlaceFlags = val
         if states.autoPlaceFlags then
             task.spawn(function()
                 while states.autoPlaceFlags do
                     pcall(function()
-                        if states.selectedFlag ~= "" then
-                            local network = ReplicatedStorage:FindFirstChild("Network")
-                            local flagRemote = network and network:FindFirstChild("FlexibleFlags_Consume")
-                            
-                            if flagRemote then
-                                local matches = getInventoryItems(states.selectedFlag, "Flag")
-                                if #matches > 0 then
-                                    table.sort(matches, function(a, b) return a.tier > b.tier end)
-                                    local bestFlag = matches[1]
-                                    flagRemote:InvokeServer(bestFlag.realName, bestFlag.guid)
-                                end
+                        local fRemote = ReplicatedStorage:FindFirstChild("Network") and ReplicatedStorage.Network:FindFirstChild("FlexibleFlags_Consume")
+                        if fRemote and states.selectedFlag ~= "" then
+                            local m = getInventoryItems(states.selectedFlag, "Flag")
+                            if #m > 0 then
+                                table.sort(m, function(a, b) return a.tier > b.tier end)
+                                fRemote:InvokeServer(m[1].realName, m[1].guid)
                             end
                         end
                     end)
@@ -1019,40 +1257,22 @@ local function LoadMainHub()
         end
     end)
 
-    -- ==========================================
-    -- 9. LOGIQUE DE L'AUTO QUEST (AUTOPILOT MULTI-TÂCHES)
-    -- ==========================================
-    local SectionQuests = Tabs.Quests:AddSection("Autopilot Intelligent")
-
-    Tabs.Quests:AddParagraph({ Title = "🤖 Comment ça marche ?", Content = "Le bot lit vos quêtes actuelles et active automatiquement les fonctions du Hub (Oeufs, Potions, Mine) en arrière-plan sans que vous n'ayez rien à faire." })
-
-    local QuestDisplayParagraph = Tabs.Quests:AddParagraph({ Title = "📜 Status des Quêtes", Content = "Scanneur inactif." })
+    -- 🛑 TOUTE LA LOGIQUE AUTOPILOT RESTAURÉE EXACTEMENT COMME AVANT 🛑
+    local TabQuests = Lib:CreateTab("Autopilot", "🤖")
+    TabQuests:CreateParagraph({Title = "🤖 Comment ça marche ?", Content = "Le bot lit vos quêtes actuelles et active automatiquement les fonctions du Hub (Oeufs, Potions, Mine) en arrière-plan sans que vous n'ayez rien à faire."})
+    
+    local QuestPara = TabQuests:CreateParagraph({Title = "📜 Status des Quêtes", Content = "Scanneur inactif."})
 
     local function getActiveQuests()
         local quests = {}
         pcall(function()
-            local playerGui = player:FindFirstChild("PlayerGui")
-            local goalsSide = playerGui and playerGui:FindFirstChild("GoalsSide")
-            local holder = goalsSide and goalsSide:FindFirstChild("Frame")
-                and goalsSide.Frame:FindFirstChild("Quests")
-                and goalsSide.Frame.Quests:FindFirstChild("QuestsGradient")
-                and goalsSide.Frame.Quests.QuestsGradient:FindFirstChild("QuestsHolder")
-            
+            local holder = player:FindFirstChild("PlayerGui") and player.PlayerGui:FindFirstChild("GoalsSide") and player.PlayerGui.GoalsSide:FindFirstChild("Frame") and player.PlayerGui.GoalsSide.Frame:FindFirstChild("Quests") and player.PlayerGui.GoalsSide.Frame.Quests:FindFirstChild("QuestsGradient") and player.PlayerGui.GoalsSide.Frame.Quests.QuestsGradient:FindFirstChild("QuestsHolder")
             if holder then
-                for _, difficulty in ipairs({"Easy", "Medium", "Hard"}) do
-                    local diffFolder = holder:FindFirstChild(difficulty)
-                    local goal = diffFolder and diffFolder:FindFirstChild("RankGradient")
-                        and diffFolder.RankGradient:FindFirstChild("RankHolder")
-                        and diffFolder.RankGradient.RankHolder:FindFirstChild("Goal")
-                    local title = goal and goal:FindFirstChild("title")
-                    local progress = goal and goal:FindFirstChild("progress")
-                    
-                    if title and title:IsA("TextLabel") and title.Text ~= "" then
-                        table.insert(quests, {
-                            difficulty = difficulty,
-                            text = title.Text,
-                            progress = progress and progress.Text or "0/1"
-                        })
+                for _, diff in ipairs({"Easy", "Medium", "Hard"}) do
+                    local goal = holder:FindFirstChild(diff) and holder[diff]:FindFirstChild("RankGradient") and holder[diff].RankGradient:FindFirstChild("RankHolder") and holder[diff].RankGradient.RankHolder:FindFirstChild("Goal")
+                    local t, p = goal and goal:FindFirstChild("title"), goal and goal:FindFirstChild("progress")
+                    if t and t:IsA("TextLabel") and t.Text ~= "" then
+                        table.insert(quests, {difficulty = diff, text = t.Text, progress = p and p.Text or "0/1"})
                     end
                 end
             end
@@ -1061,33 +1281,19 @@ local function LoadMainHub()
     end
 
     local function findDiamondBreakable()
-        local breakablesFolder = workspace:FindFirstChild("__THINGS") and workspace.__THINGS:FindFirstChild("Breakables")
-        if breakablesFolder then
-            for _, group in pairs(breakablesFolder:GetChildren()) do
-                for _, breakable in pairs(group:GetChildren()) do
-                    local isDiamond = false
-                    for _, desc in ipairs(breakable:GetDescendants()) do
-                        if desc:IsA("Decal") or desc:IsA("Texture") then
-                            if desc.Texture:find("88416525922321") or desc.Texture:find("88416525922321c") then
-                                isDiamond = true
-                                break
-                            end
-                        elseif desc:IsA("SpecialMesh") or desc:IsA("MeshPart") then
-                            if tostring(desc.MeshId):find("88416525922321") or tostring(desc.TextureId):find("88416525922321") then
-                                isDiamond = true
-                                break
-                            end
-                        end
+        local bF = workspace:FindFirstChild("__THINGS") and workspace.__THINGS:FindFirstChild("Breakables")
+        if bF then
+            for _, g in pairs(bF:GetChildren()) do
+                for _, b in pairs(g:GetChildren()) do
+                    local isD = false
+                    for _, desc in ipairs(b:GetDescendants()) do
+                        if (desc:IsA("Decal") or desc:IsA("Texture")) and (desc.Texture:find("88416525922321") or desc.Texture:find("88416525922321c")) then isD = true break
+                        elseif (desc:IsA("SpecialMesh") or desc:IsA("MeshPart")) and (tostring(desc.MeshId):find("88416525922321") or tostring(desc.TextureId):find("88416525922321")) then isD = true break end
                     end
-                    if breakable.Name:lower():find("diamond") or breakable.Name:lower():find("diamant") then
-                        isDiamond = true
-                    end
-                    
-                    if isDiamond then
-                        local hitbox = breakable:FindFirstChild("Hitbox") or breakable:FindFirstChildWhichIsA("BasePart")
-                        if hitbox then
-                            return breakable, hitbox, group.Name
-                        end
+                    if b.Name:lower():find("diamond") or b.Name:lower():find("diamant") then isD = true end
+                    if isD then
+                        local hb = b:FindFirstChild("Hitbox") or b:FindFirstChildWhichIsA("BasePart")
+                        if hb then return b, hb, g.Name end
                     end
                 end
             end
@@ -1095,235 +1301,89 @@ local function LoadMainHub()
         return nil
     end
 
-    local questEnabledEgg = false
-    local questEnabledPotions = false
-    local questEnabledMine = false
+    local qEEgg, qEPot, qEMine = false, false, false
 
-    local AutoQuestsToggle = Tabs.Quests:AddToggle("AutoQuestsToggle", {Title = "Démarrer l'Autopilot", Default = false })
-    AutoQuestsToggle:OnChanged(function(state)
-        states.autoQuests = state
+    TabQuests:CreateToggle("Démarrer l'Autopilot", false, function(val)
+        states.autoQuests = val
         if states.autoQuests then
             task.spawn(function()
                 while states.autoQuests do
                     local quests = getActiveQuests()
-                    local hasHatchQuest = false
-                    local hasPotionQuest = false
-                    local hasDiamondQuest = false
-                    local hasMineQuest = false
-                    
+                    local hasHatch, hasPot, hasDiam, hasMine = false, false, false, false
                     for _, q in ipairs(quests) do
                         local t = q.text:lower()
-                        if t:find("hatch") and (t:find("best") or t:find("meilleur") or t:find("egg") or t:find("oeuf")) then
-                            hasHatchQuest = true
-                        elseif t:find("potion") or t:find("consume") or t:find("utilis") then
-                            hasPotionQuest = true
-                        elseif t:find("diamond") or t:find("diamant") then
-                            hasDiamondQuest = true
-                        elseif t:find("dig") or t:find("mine") or t:find("coffre") or t:find("chest") then
-                            hasMineQuest = true
-                        end
+                        if t:find("hatch") and (t:find("best") or t:find("egg") or t:find("oeuf")) then hasHatch = true
+                        elseif t:find("potion") or t:find("consume") then hasPot = true
+                        elseif t:find("diamond") or t:find("diamant") then hasDiam = true
+                        elseif t:find("dig") or t:find("mine") or t:find("chest") then hasMine = true end
                     end
                     
-                    if hasHatchQuest then
-                        if not questEnabledEgg then
-                            questEnabledEgg = true
-                            local bestEggName = "Tentacle Egg"
-                            pcall(function()
-                                local displayList, nameToIdMap = GetEggList()
-                                if #displayList > 0 then
-                                    local bestDisplay = displayList[#displayList]
-                                    bestEggName = nameToIdMap[bestDisplay] or "Tentacle Egg"
-                                end
-                            end)
-                            states.selectedEgg = bestEggName
-                            if AutoEggToggle then AutoEggToggle:SetValue(true) else states.autoEgg = true end
-                        end
+                    if hasHatch then
+                        if not qEEgg then qEEgg = true; pcall(function() local d, m = GetEggList(); if #d > 0 then states.selectedEgg = m[d[#d]] end end); states.autoEgg = true end
                     else
-                        if questEnabledEgg then
-                            questEnabledEgg = false
-                            if AutoEggToggle then AutoEggToggle:SetValue(false) else states.autoEgg = false end
-                        end
+                        if qEEgg then qEEgg = false; states.autoEgg = false end
                     end
                     
-                    if hasPotionQuest then
-                        if not questEnabledPotions then
-                            questEnabledPotions = true
-                            local hasSelected = false
-                            for _, act in pairs(states.selectedPotions) do
-                                if act then hasSelected = true break end
-                            end
-                            if not hasSelected then
-                                states.selectedPotions["Coins Potion"] = true
-                                states.selectedPotions["Luck Potion"] = true
-                            end
-                            if AutoPotionsToggle then AutoPotionsToggle:SetValue(true) else states.autoConsumePotions = true end
-                        end
+                    if hasPot then
+                        if not qEPot then qEPot = true; states.selectedPotions["Coins Potion"] = true; states.autoConsumePotions = true end
                     else
-                        if questEnabledPotions then
-                            questEnabledPotions = false
-                            if AutoPotionsToggle then AutoPotionsToggle:SetValue(false) else states.autoConsumePotions = false end
-                        end
+                        if qEPot then qEPot = false; states.autoConsumePotions = false end
                     end
                     
-                    if hasDiamondQuest then
-                        if questEnabledMine then
-                            questEnabledMine = false
-                            if AutoMineToggle then AutoMineToggle:SetValue(false) else states.autoMine = false end
+                    if hasDiam then
+                        if qEMine then qEMine = false; states.autoMine = false end
+                        local b, hb, gn = findDiamondBreakable()
+                        if b and hb and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                            player.Character.HumanoidRootPart.CFrame = hb.CFrame + Vector3.new(0, 3, 0)
+                            local dR = ReplicatedStorage:FindFirstChild("Network") and ReplicatedStorage.Network:FindFirstChild("Breakables_PlayerDealDamage")
+                            if dR then dR:FireServer(gn); dR:FireServer(gn) end
                         end
-                        
-                        local breakable, hitbox, groupName = findDiamondBreakable()
-                        if breakable and hitbox then
-                            if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-                                player.Character.HumanoidRootPart.CFrame = hitbox.CFrame + Vector3.new(0, 3, 0)
-                            end
-                            local network = ReplicatedStorage:FindFirstChild("Network")
-                            local damageRemote = network and network:FindFirstChild("Breakables_PlayerDealDamage")
-                            if damageRemote then
-                                damageRemote:FireServer(groupName)
-                                damageRemote:FireServer(groupName)
-                            end
-                        else
-                            pcall(function()
-                                local underworld = workspace:FindFirstChild("Map") and workspace.Map:FindFirstChild("14 | Underworld")
-                                local interact = underworld and underworld:FindFirstChild("INTERACT")
-                                local spawns = interact and interact:FindFirstChild("BREAKABLE_SPAWNS")
-                                local mainSpawn = spawns and spawns:FindFirstChild("Main")
-                                if mainSpawn and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-                                    player.Character.HumanoidRootPart.CFrame = mainSpawn.CFrame + Vector3.new(0, 3, 0)
-                                end
-                            end)
-                        end
-                        
-                    elseif hasMineQuest then
-                        if not questEnabledMine then
-                            questEnabledMine = true
-                            states.digsiteMode = "Efficiency"
-                            if AutoMineToggle then AutoMineToggle:SetValue(true) else states.autoMine = true end
-                        end
+                    elseif hasMine then
+                        if not qEMine then qEMine = true; states.digsiteMode = "Efficiency"; states.autoMine = true end
                     else
-                        if questEnabledMine then
-                            questEnabledMine = false
-                            if AutoMineToggle then AutoMineToggle:SetValue(false) else states.autoMine = false end
-                        end
+                        if qEMine then qEMine = false; states.autoMine = false end
                     end
-                    
                     task.wait(1.5)
                 end
             end)
         else
-            if questEnabledEgg then
-                questEnabledEgg = false
-                if AutoEggToggle then AutoEggToggle:SetValue(false) else states.autoEgg = false end
-            end
-            if questEnabledPotions then
-                questEnabledPotions = false
-                if AutoPotionsToggle then AutoPotionsToggle:SetValue(false) else states.autoConsumePotions = false end
-            end
-            if questEnabledMine then
-                questEnabledMine = false
-                if AutoMineToggle then AutoMineToggle:SetValue(false) else states.autoMine = false end
-            end
+            if qEEgg then qEEgg = false; states.autoEgg = false end
+            if qEPot then qEPot = false; states.autoConsumePotions = false end
+            if qEMine then qEMine = false; states.autoMine = false end
         end
     end)
 
     task.spawn(function()
         while task.wait(1.5) do
             local quests = getActiveQuests()
-            local content = ""
-            if #quests == 0 then
-                content = "Aucune quête active trouvée. En attente..."
-            else
-                for _, q in ipairs(quests) do
-                    content = content .. string.format("• [%s] %s (%s)\n", q.difficulty, q.text, q.progress)
-                end
-            end
-            pcall(function()
-                if states.autoQuests then
-                    QuestDisplayParagraph:SetTitle("🟢 Tracker Actif")
-                else
-                    QuestDisplayParagraph:SetTitle("🔴 Tracker Désactivé")
-                end
-                QuestDisplayParagraph:SetContent(content)
-            end)
+            local c = ""
+            if #quests == 0 then c = "Aucune quête active trouvée. En attente..."
+            else for _, q in ipairs(quests) do c = c .. string.format("• [%s] %s (%s)\n", q.difficulty, q.text, q.progress) end end
+            pcall(function() QuestPara:Set({Title = states.autoQuests and "🟢 Tracker Actif" or "🔴 Tracker Désactivé", Content = c}) end)
         end
     end)
 
-    -- ==========================================
-    -- 10. PARAMÈTRES ET FERMETURE
-    -- ==========================================
-    local SectionUtils = Tabs.Settings:AddSection("Utilitaires")
-
-    local afkConnection
-    local AntiAfkToggle = Tabs.Settings:AddToggle("AntiAfkToggle", {Title = "Mode Anti-AFK", Default = false })
-    AntiAfkToggle:OnChanged(function(state)
-        states.afkMode = state
+    -- === TAB SETTINGS ===
+    local TabSettings = Lib:CreateTab("Paramètres", "⚙️")
+    TabSettings:CreateToggle("Anti-AFK", false, function(val)
+        states.afkMode = val
         if states.afkMode then
-            local VirtualUser = game:GetService("VirtualUser")
-            afkConnection = player.Idled:Connect(function()
-                VirtualUser:CaptureController()
-                VirtualUser:ClickButton2(Vector2.new())
-            end)
-        else
-            if afkConnection then afkConnection:Disconnect() end
+            local vu = game:GetService("VirtualUser")
+            player.Idled:Connect(function() vu:CaptureController(); vu:ClickButton2(Vector2.new()) end)
         end
     end)
-
-    Tabs.Settings:AddButton({
-        Title = "Fermer le Hub et détruire les scripts",
-        Description = "Désactive tout et supprime l'interface de l'écran.",
-        Callback = function()
-            FlyToggle:SetValue(false)
-            NoclipToggle:SetValue(false)
-            InfJumpToggle:SetValue(false)
-            ESPToggle:SetValue(false)
-            ClickTpToggle:SetValue(false)
-            SpeedSlider:SetValue(16)
-            JumpSlider:SetValue(50)
-            AutoTapToggle:SetValue(false)
-            AutoCollectToggle:SetValue(false)
-            AutoBuyZoneToggle:SetValue(false)
-            AutoMineToggle:SetValue(false)
-            AutoEggToggle:SetValue(false)
-            DisableAnimToggle:SetValue(false)
-            EventUpgradesToggle:SetValue(false)
-            AntiAfkToggle:SetValue(false)
-            AutoPotionsToggle:SetValue(false)
-            AutoFlagsToggle:SetValue(false)
-            AutoQuestsToggle:SetValue(false)
-            
-            if auraVisual then auraVisual:Destroy() end
-            if espFolder then espFolder:Destroy() end
-            
-            Fluent:Destroy()
-        end
-    })
-
-    ThemeManager:SetLibrary(Fluent)
-    SaveManager:SetLibrary(Fluent)
-    SaveManager:IgnoreThemeSettings()
-    SaveManager:SetIgnoreIndexes({})
-    ThemeManager:SetFolder("PremiumHub")
-    SaveManager:SetFolder("PremiumHub/PetSim")
-    
-    -- Crée l'interface de sauvegarde dans l'onglet Paramètres
-    SaveManager:BuildConfigSection(Tabs.Settings)
-    ThemeManager:BuildInterfaceSection(Tabs.Settings)
-
-    Window:SelectTab(1)
-
-    -- 🟢 LIGNE AJOUTÉE : Charge automatiquement tes réglages sauvegardés !
-    SaveManager:LoadAutoloadConfig()
-
-    Fluent:Notify({
-        Title = "💎 Premium Hub Chargé",
-        Content = "Interface et configurations chargées !",
-        Duration = 5
-    })
+    TabSettings:CreateButton("Fermer et Détruire le Hub", function()
+        CustomUI:Destroy()
+        if auraVisual then auraVisual:Destroy() end
+        if espFolder then espFolder:Destroy() end
+    end)
 end
 
 -- ==========================================
--- SYSTEME DE CLEF (UI DE CONNEXION)
+-- SYSTEME DE CLEF (UI DE CONNEXION PREMIUM)
 -- ==========================================
+local TweenService = game:GetService("TweenService")
+
 if CoreGui:FindFirstChild("PremiumHubKeySystem") then
     CoreGui.PremiumHubKeySystem:Destroy()
 end
@@ -1332,35 +1392,88 @@ local KeySystemUI = Instance.new("ScreenGui")
 KeySystemUI.Name = "PremiumHubKeySystem"
 KeySystemUI.Parent = CoreGui
 KeySystemUI.ResetOnSpawn = false
+KeySystemUI.IgnoreGuiInset = true -- Prend tout l'écran
 
+-- 1. Fond sombre cinématique (Overlay)
+local Overlay = Instance.new("Frame")
+Overlay.Size = UDim2.new(1, 0, 1, 0)
+Overlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+Overlay.BackgroundTransparency = 1 -- Commence transparent
+Overlay.BorderSizePixel = 0
+Overlay.Parent = KeySystemUI
+
+TweenService:Create(Overlay, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = 0.4}):Play()
+
+-- 2. Fenêtre principale
 local MainFrame = Instance.new("Frame")
-MainFrame.Size = UDim2.new(0, 300, 0, 160)
-MainFrame.Position = UDim2.new(0.5, -150, 0.5, -80)
-MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+MainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
+MainFrame.Size = UDim2.new(0, 0, 0, 0) -- Commence à 0 pour l'animation
+MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 24)
 MainFrame.BorderSizePixel = 0
+MainFrame.ClipsDescendants = true
 MainFrame.Parent = KeySystemUI
 
 local UICorner = Instance.new("UICorner")
-UICorner.CornerRadius = UDim.new(0, 8)
+UICorner.CornerRadius = UDim.new(0, 12)
 UICorner.Parent = MainFrame
 
+local FrameStroke = Instance.new("UIStroke")
+FrameStroke.Color = Color3.fromRGB(255, 175, 50)
+FrameStroke.Thickness = 1.5
+FrameStroke.Transparency = 0.4
+FrameStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+FrameStroke.Parent = MainFrame
+
+-- Animation d'ouverture (Bounce)
+TweenService:Create(MainFrame, TweenInfo.new(0.6, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Size = UDim2.new(0, 340, 0, 320)}):Play()
+
+-- ==========================================
+-- 🖼️ LOGO FLOTTANT PERSONNALISÉ (FORMAT CARRÉ 1024x1024)
+-- ==========================================
+local Logo = Instance.new("ImageLabel")
+Logo.Size = UDim2.new(0, 110, 0, 110) -- Proportions parfaites pour ton image carrée
+Logo.Position = UDim2.new(0.5, -55, 0, 15) -- Parfaitement centré
+Logo.BackgroundTransparency = 1
+Logo.ScaleType = Enum.ScaleType.Fit
+Logo.Image = "rbxthumb://type=Asset&id=74238841967167&w=420&h=420"
+Logo.Parent = MainFrame
+
+-- Animation de flottement infinie ajustée au nouveau centre
+local floatTweenInfo = TweenInfo.new(2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true)
+local floatTween = TweenService:Create(Logo, floatTweenInfo, {Position = UDim2.new(0.5, -55, 0, 5)})
+floatTween:Play()
+-- ==========================================
+
 local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(1, 0, 0, 40)
+Title.Size = UDim2.new(1, 0, 0, 25)
+Title.Position = UDim2.new(0, 0, 0, 130)
 Title.BackgroundTransparency = 1
-Title.Text = "🔑 Hub Privé - Mot de passe"
+Title.Text = "67 FEET PREMIUM"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-Title.Font = Enum.Font.GothamBold
-Title.TextSize = 16
+Title.Font = Enum.Font.GothamBlack
+Title.TextSize = 18
 Title.Parent = MainFrame
 
+local SubTitle = Instance.new("TextLabel")
+SubTitle.Size = UDim2.new(1, 0, 0, 20)
+SubTitle.Position = UDim2.new(0, 0, 0, 155)
+SubTitle.BackgroundTransparency = 1
+SubTitle.Text = "Pet-Squads-Y"
+SubTitle.TextColor3 = Color3.fromRGB(255, 175, 50)
+SubTitle.Font = Enum.Font.GothamMedium
+SubTitle.TextSize = 12
+SubTitle.Parent = MainFrame
+
 local TextBox = Instance.new("TextBox")
-TextBox.Size = UDim2.new(0.8, 0, 0, 35)
-TextBox.Position = UDim2.new(0.1, 0, 0.35, 0)
-TextBox.PlaceholderText = "Entrez la clé d'accès..."
+TextBox.Size = UDim2.new(0.85, 0, 0, 40)
+TextBox.Position = UDim2.new(0.075, 0, 0, 190)
+TextBox.PlaceholderText = "Entrez votre clé d'accès..."
 TextBox.Text = ""
-TextBox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+TextBox.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
 TextBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-TextBox.Font = Enum.Font.Gotham
+TextBox.PlaceholderColor3 = Color3.fromRGB(100, 100, 110)
+TextBox.Font = Enum.Font.GothamMedium
 TextBox.TextSize = 14
 TextBox.Parent = MainFrame
 
@@ -1368,34 +1481,78 @@ local Corner2 = Instance.new("UICorner")
 Corner2.CornerRadius = UDim.new(0, 6)
 Corner2.Parent = TextBox
 
+local TextBoxStroke = Instance.new("UIStroke")
+TextBoxStroke.Color = Color3.fromRGB(50, 50, 60)
+TextBoxStroke.Thickness = 1
+TextBoxStroke.Parent = TextBox
+
+TextBox.Focused:Connect(function()
+    TweenService:Create(TextBoxStroke, TweenInfo.new(0.3), {Color = Color3.fromRGB(255, 175, 50)}):Play()
+end)
+TextBox.FocusLost:Connect(function()
+    TweenService:Create(TextBoxStroke, TweenInfo.new(0.3), {Color = Color3.fromRGB(50, 50, 60)}):Play()
+end)
+
 local SubmitBtn = Instance.new("TextButton")
-SubmitBtn.Size = UDim2.new(0.8, 0, 0, 35)
-SubmitBtn.Position = UDim2.new(0.1, 0, 0.65, 0)
-SubmitBtn.Text = "Valider"
-SubmitBtn.BackgroundColor3 = Color3.fromRGB(138, 43, 226) -- Couleur Amethyst
-SubmitBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+SubmitBtn.Size = UDim2.new(0.85, 0, 0, 40)
+SubmitBtn.Position = UDim2.new(0.075, 0, 0, 245)
+SubmitBtn.Text = "SE CONNECTER"
+SubmitBtn.BackgroundColor3 = Color3.fromRGB(255, 175, 50)
+SubmitBtn.TextColor3 = Color3.fromRGB(20, 20, 20)
 SubmitBtn.Font = Enum.Font.GothamBold
-SubmitBtn.TextSize = 14
+SubmitBtn.TextSize = 13
+SubmitBtn.AutoButtonColor = false
 SubmitBtn.Parent = MainFrame
 
 local Corner3 = Instance.new("UICorner")
 Corner3.CornerRadius = UDim.new(0, 6)
 Corner3.Parent = SubmitBtn
 
+local ButtonGradient = Instance.new("UIGradient")
+ButtonGradient.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 195, 50)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(220, 140, 0))
+}
+ButtonGradient.Parent = SubmitBtn
+
+SubmitBtn.MouseEnter:Connect(function()
+    TweenService:Create(SubmitBtn, TweenInfo.new(0.2), {Size = UDim2.new(0.87, 0, 0, 42), Position = UDim2.new(0.065, 0, 0, 244)}):Play()
+end)
+SubmitBtn.MouseLeave:Connect(function()
+    TweenService:Create(SubmitBtn, TweenInfo.new(0.2), {Size = UDim2.new(0.85, 0, 0, 40), Position = UDim2.new(0.075, 0, 0, 245)}):Play()
+end)
+
 SubmitBtn.MouseButton1Click:Connect(function()
     if TextBox.Text == MOT_DE_PASSE then
-        -- Bonne clé : on détruit l'UI de connexion et on lance le Hub
-        SubmitBtn.Text = "Succès !"
+        ButtonGradient:Destroy()
         SubmitBtn.BackgroundColor3 = Color3.fromRGB(40, 200, 40)
+        SubmitBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        SubmitBtn.Text = "ACCÈS AUTORISÉ"
+        
+        -- Animation de fermeture
+        TweenService:Create(MainFrame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.In), {Size = UDim2.new(0, 0, 0, 0)}):Play()
+        TweenService:Create(Overlay, TweenInfo.new(0.4), {BackgroundTransparency = 1}):Play()
+        
         task.wait(0.5)
         KeySystemUI:Destroy()
         LoadMainHub()
     else
-        -- Mauvaise clé
-        SubmitBtn.Text = "Mot de passe incorrect !"
-        SubmitBtn.BackgroundColor3 = Color3.fromRGB(200, 40, 40)
-        task.wait(1.5)
-        SubmitBtn.Text = "Valider"
-        SubmitBtn.BackgroundColor3 = Color3.fromRGB(138, 43, 226)
+        ButtonGradient:Destroy()
+        SubmitBtn.BackgroundColor3 = Color3.fromRGB(220, 40, 40)
+        SubmitBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        SubmitBtn.Text = "CLÉ INCORRECTE"
+        
+        -- Effet de tremblement (Shake)
+        local originalPos = MainFrame.Position
+        for i = 1, 6 do
+            MainFrame.Position = originalPos + UDim2.new(0, math.random(-5, 5), 0, 0)
+            task.wait(0.05)
+        end
+        MainFrame.Position = originalPos
+        
+        task.wait(1)
+        SubmitBtn.TextColor3 = Color3.fromRGB(20, 20, 20)
+        SubmitBtn.Text = "SE CONNECTER"
+        ButtonGradient.Parent = SubmitBtn
     end
 end)
