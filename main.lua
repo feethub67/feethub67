@@ -1117,6 +1117,8 @@ local function LoadMainHub()
     
     local eList, eMap = GetEggList()
     TabEggs:CreateDropdown("Sélectionner un Œuf", eList, false, function(val) states.selectedEgg = eMap[val[1]] or "Tentacle Egg" end)
+    
+    -- // CORRECTION HATCH EGG (Utilisation de RemoteFunction au lieu de Eggs_RequestPurchase) \\
     TabEggs:CreateToggle("Auto Open (x99)", false, function(val)
         states.autoEgg = val
         if states.autoEgg then
@@ -1124,8 +1126,19 @@ local function LoadMainHub()
                 while states.autoEgg do
                     pcall(function()
                         if states.selectedEgg ~= "" then
-                            local eRemote = ReplicatedStorage:FindFirstChild("Network") and ReplicatedStorage.Network:FindFirstChild("Eggs_RequestPurchase")
-                            if eRemote then eRemote:InvokeServer(states.selectedEgg, 99) end
+                            local network = ReplicatedStorage:FindFirstChild("Network")
+                            local eRemote = network and network:FindFirstChild("RemoteFunction")
+                            if eRemote then 
+                                -- 1. On envoie la demande d'ouverture avec la structure exacte des arguments
+                                local args = {
+                                    states.selectedEgg,
+                                    99
+                                }
+                                eRemote:InvokeServer(unpack(args))
+                                
+                                -- 2. On envoie l'appel vide (souvent utilisé par le jeu pour clore la requête/animation)
+                                pcall(function() eRemote:InvokeServer() end)
+                            end
                         end
                     end)
                     task.wait(0.1)
@@ -1133,6 +1146,7 @@ local function LoadMainHub()
             end)
         end
     end)
+    
     TabEggs:CreateToggle("No Animation (Anti-Lag)", false, function(val) states.disableEggAnimation = val end)
     
     task.spawn(function()
